@@ -2410,7 +2410,7 @@
     (in_bom yes) (on_board yes) (fields_autoplaced)
     (uuid 3b8e2598-127e-44a4-92fc-765ea868e8bf)
     (property "Reference" "R2" (id 0) (at 118.11 25.4 90))
-    (property "Value" "100k" (id 1) (at 118.11 27.94 90))
+    (property "Value" "10k" (id 1) (at 118.11 27.94 90))
     (property "Footprint" "Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P15.24mm_Horizontal" (id 2) (at 118.11 29.972 90)
       (effects (font (size 1.27 1.27)) hide)
     )
@@ -2672,7 +2672,7 @@
   (symbol (lib_id "power:+3.3V") (at 21.59 64.77 0) (unit 1)
     (in_bom yes) (on_board yes) (fields_autoplaced)
     (uuid 65d856af-455e-4370-a62a-86db4add8d1c)
-    (property "Reference" "#PWR?" (id 0) (at 21.59 68.58 0)
+    (property "Reference" "#PWR0103" (id 0) (at 21.59 68.58 0)
       (effects (font (size 1.27 1.27)) hide)
     )
     (property "Value" "+3.3V" (id 1) (at 21.5899 60.96 90)
@@ -2777,8 +2777,8 @@
     (in_bom yes) (on_board yes) (fields_autoplaced)
     (uuid 783c6bba-2eb3-40e4-977f-72194ec38619)
     (property "Reference" "L1" (id 0) (at 33.02 163.83 90))
-    (property "Value" "L" (id 1) (at 33.02 166.37 90))
-    (property "Footprint" "Inductor_THT:L_Axial_L5.0mm_D3.6mm_P10.00mm_Horizontal_Murata_BL01RN1A2A2" (id 2) (at 33.02 170.18 0)
+    (property "Value" "33uH" (id 1) (at 33.02 166.37 90))
+    (property "Footprint" "Inductor_THT:L_Radial_D12.5mm_P7.00mm_Fastron_09HCP" (id 2) (at 33.02 170.18 0)
       (effects (font (size 1.27 1.27)) hide)
     )
     (property "Datasheet" "~" (id 3) (at 33.02 170.18 0)
@@ -3108,7 +3108,7 @@
   (symbol (lib_id "power:GND") (at 21.59 71.12 270) (unit 1)
     (in_bom yes) (on_board yes)
     (uuid be68d9b0-e067-4146-aacb-5c8f1e16dfa5)
-    (property "Reference" "#PWR?" (id 0) (at 15.24 71.12 0)
+    (property "Reference" "#PWR0104" (id 0) (at 15.24 71.12 0)
       (effects (font (size 1.27 1.27)) hide)
     )
     (property "Value" "GND" (id 1) (at 16.51 71.12 0))
@@ -3391,7 +3391,7 @@
   (symbol (lib_id "power:+5V") (at 20.32 86.36 180) (unit 1)
     (in_bom yes) (on_board yes) (fields_autoplaced)
     (uuid fbd6210b-5b8a-4516-80a8-c494d3a8c4aa)
-    (property "Reference" "#PWR?" (id 0) (at 20.32 82.55 0)
+    (property "Reference" "#PWR0102" (id 0) (at 20.32 82.55 0)
       (effects (font (size 1.27 1.27)) hide)
     )
     (property "Value" "+5V" (id 1) (at 20.32 91.44 0))
@@ -3550,14 +3550,14 @@
     (path "/33ab06e8-6802-4a0f-9755-ff8db5e34ffc"
       (reference "#PWR0101") (unit 1) (value "GND") (footprint "")
     )
+    (path "/fbd6210b-5b8a-4516-80a8-c494d3a8c4aa"
+      (reference "#PWR0102") (unit 1) (value "+5V") (footprint "")
+    )
     (path "/65d856af-455e-4370-a62a-86db4add8d1c"
-      (reference "#PWR?") (unit 1) (value "+3.3V") (footprint "")
+      (reference "#PWR0103") (unit 1) (value "+3.3V") (footprint "")
     )
     (path "/be68d9b0-e067-4146-aacb-5c8f1e16dfa5"
-      (reference "#PWR?") (unit 1) (value "GND") (footprint "")
-    )
-    (path "/fbd6210b-5b8a-4516-80a8-c494d3a8c4aa"
-      (reference "#PWR?") (unit 1) (value "+5V") (footprint "")
+      (reference "#PWR0104") (unit 1) (value "GND") (footprint "")
     )
     (path "/49927729-dc2e-4ac4-b7aa-0e4f2f15cd80"
       (reference "C1") (unit 1) (value "470uF") (footprint "Capacitor_THT:CP_Radial_D12.5mm_P5.00mm")
@@ -3644,13 +3644,13 @@
       (reference "J3") (unit 1) (value "Taster-LED") (footprint "TerminalBlock:TerminalBlock_Altech_AK300-2_P5.00mm")
     )
     (path "/783c6bba-2eb3-40e4-977f-72194ec38619"
-      (reference "L1") (unit 1) (value "L") (footprint "Inductor_THT:L_Axial_L5.0mm_D3.6mm_P10.00mm_Horizontal_Murata_BL01RN1A2A2")
+      (reference "L1") (unit 1) (value "33uH") (footprint "Inductor_THT:L_Radial_D12.5mm_P7.00mm_Fastron_09HCP")
     )
     (path "/514b804b-34d2-4c7c-9e21-9eacc38ed900"
       (reference "R1") (unit 1) (value "LDR03") (footprint "OptoDevice:R_LDR_10x8.5mm_P7.6mm_Vertical")
     )
     (path "/3b8e2598-127e-44a4-92fc-765ea868e8bf"
-      (reference "R2") (unit 1) (value "100k") (footprint "Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P15.24mm_Horizontal")
+      (reference "R2") (unit 1) (value "10k") (footprint "Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P15.24mm_Horizontal")
     )
     (path "/dc669c4c-1e7c-430f-966e-aef9a17d07be"
       (reference "R3") (unit 1) (value "330") (footprint "Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P15.24mm_Horizontal")
