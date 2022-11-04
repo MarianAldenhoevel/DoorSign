@@ -25,11 +25,11 @@
      borderopacity="1.0"
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
-     inkscape:zoom="1.2494231"
-     inkscape:cx="212.39445"
-     inkscape:cy="340.15699"
+     inkscape:zoom="1"
+     inkscape:cx="76.331654"
+     inkscape:cy="341.84894"
      inkscape:document-units="mm"
-     inkscape:current-layer="layer4"
+     inkscape:current-layer="layer1"
      showgrid="false"
      showguides="true"
      inkscape:guide-bbox="true"
@@ -95,22 +95,16 @@
        inkscape:connector-curvature="0"
        sodipodi:nodetypes="cscccccccccccccccccsscccccccc" />
     <circle
-       style="opacity:0.97100004;vector-effect:none;fill:none;fill-opacity:1;stroke:#0c0000;stroke-width:0.26458332;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1"
+       style="opacity:0.97100004;vector-effect:none;fill:none;fill-opacity:1;stroke:#0c0000;stroke-width:0.11291017;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1"
        id="path1499"
        cx="89.893982"
-       cy="263.10568"
-       r="19.200001" />
+       cy="260.95862"
+       r="8.1935453" />
   </g>
   <g
      inkscape:groupmode="layer"
      id="layer4"
      inkscape:label="F.Silkscreen">
-    <circle
-       style="opacity:0.97100004;vector-effect:none;fill:#ff0000;fill-opacity:1;stroke:none;stroke-width:0.30316839;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1"
-       id="path1499-7"
-       cx="89.893982"
-       cy="263.10568"
-       r="22" />
     <path
        inkscape:connector-curvature="0"
        id="rect2953-2"
