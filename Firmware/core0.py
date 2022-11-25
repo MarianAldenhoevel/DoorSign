@@ -192,13 +192,13 @@ def handleHttp(socket):
                     doorsign.setManualControl(True)
                     doorsign.beginUpdate()
                     try:                    
-                        for neoPixelIndex in range(doorsign.neoPixelCount):
-                            rgb = (
+                        for pixelIndex in range(doorsign.pixelCount):
+                            pixel = (
                                 int(params.get("r" + str(i), 0)),
                                 int(params.get("g" + str(i), 0)),
                                 int(params.get("b" + str(i), 0)),
                             )
-                            doorsign.setNeoPixel(neoPixelIndex, rgb)
+                            doorsign.setPixel(pixelIndex, pixel)
                     finally:
                         doorsign.endUpdate()                    
                         

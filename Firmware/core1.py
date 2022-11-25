@@ -94,16 +94,16 @@ def task():
             
         else:
             # No program at all. All off.
-            pixels = [[0, 0, 0]] * doorsign.neoPixelCount
+            pixels = [[0, 0, 0]] * doorsign.pixelCount
             
         # Output the pixels if not under manual control
         if not doorsign.manual_control:
-            doorsign.setNeoPixels(pixels)
+            doorsign.setPixels(pixels)
         
         # Sleep for the remainder of the frame if any.
         now_ms = time.ticks_ms()
         used_ms = time.ticks_diff(now_ms, frame_ms)
-        remaining_ms = doorsign.frameintervall_ms - used_ms
+        remaining_ms = doorsign.frame_intervall_ms - used_ms
    
         if remaining_ms > 0:
             time.sleep_ms(remaining_ms)

@@ -11,7 +11,7 @@ startpixels = None
 endpixels = None
 
 blendstart_ms = None
-blend_ms = 1000
+blend_ms = 3000
 
 def update(frame_ms):
     global lastframe_ms
@@ -21,8 +21,8 @@ def update(frame_ms):
     
     if (lastframe_ms == None):        
         # First frame. Initialize to random colors and set up the colors to fade to.
-        startpixels = [doorsign.randomColor() for _ in range(doorsign.neoPixelCount)]
-        endpixels =   [doorsign.randomColor() for _ in range(doorsign.neoPixelCount)]
+        startpixels = [doorsign.randomColor() for _ in range(doorsign.pixelCount)]
+        endpixels =   [doorsign.randomColor() for _ in range(doorsign.pixelCount)]
 
         blendstart_ms = frame_ms
         
@@ -41,7 +41,7 @@ def update(frame_ms):
             # next blend.
             result = endpixels
             startpixels = endpixels
-            endpixels =   [doorsign.randomColor() for _ in range(doorsign.neoPixelCount)]
+            endpixels =   [doorsign.randomColor() for _ in range(doorsign.pixelCount)]
 
             blendstart_ms = frame_ms
 

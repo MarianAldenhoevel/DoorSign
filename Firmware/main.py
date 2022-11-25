@@ -4,13 +4,16 @@ import core0
 import core1
 import logger
 import time
+import doorsign
 
 # Here we go!
 logger.write("Doorsign firmware 0.0")
 logger.write("2022 marian.aldenhoevel@marian-aldenhoevel.de")
 logger.write("https://github.com/MarianAldenhoevel/DoorSign")
 
-logger.write('Standing by for KeyBoardInterrupt')
+doorsign.off()
+
+logger.write('Standing by for KeyboardInterrupt')
 for _ in range(40):
     time.sleep(0.1)
 

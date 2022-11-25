@@ -8,11 +8,12 @@ def sample(updateFunc):
     while True:
         frame_ms = time.ticks_ms()
         pixels = updateFunc(frame_ms)        
-        doorsign.setNeoPixels(pixels)
+        # print(str(frame_ms) + ' ' + doorsign.formatPixels(pixels))
+        doorsign.setPixels(pixels)
         
         now_ms = time.ticks_ms()
         used_ms = time.ticks_diff(now_ms, frame_ms)
-        remaining_ms = doorsign.frameintervall_ms - used_ms
+        remaining_ms = doorsign.frame_intervall_ms - used_ms
    
         time.sleep_ms(remaining_ms)
    
