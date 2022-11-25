@@ -1,169 +1,275 @@
- g, b)
-        Color in the RGB color space
-    Returns
-    -------
-    tuple (h, s, v)
-        Color in the HSV color space
-    """
-    
-    # Scale from 0 .. 255 to 0.0 .. 1.0
-    (r, g, b) = rgb_color
-    r = r / 255.0
-    g = g / 255.0
-    b = b / 255.0
-    high = max(r, g, b)
-    low = min(r, g, b)
-    h, s, v = high, high, high
+<!DOCTYPE html>
+<html>
+    <head>
+        <script src="https://code.jquery.com/jquery-3.6.1.min.js"></script>
+        <style>
+            .led {
+                width: 20em;
+                margin-bottom: 1em;
+            }
 
-    d = high - low
-    s = 0 if high == 0 else d/high
+            .led-outer {
+                border: 1px solid black;
+            }
 
-    if high == low:
-        h = 0.0
-    else:
-        h = {
-            r: (g - b) / d + (6 if g < b else 0),
-            g: (b - r) / d + 2,
-            b: (r - g) / d + 4,
-        }[high]
-        h /= 6
+            .led-center {
+                border: 5px solid blue;
+            }
 
-    return h, s, v
+            .led-inner {
+                border: 1px solid black;
+                padding: 0.5em;
+            }
 
-def hsv_to_rgb(hsv_color):
-    """Converts colors from the HSV color space to the RGB color space.
-    Parameters
-    ----------
-    hsv_color : tuple (h, s, v)
-        Color in the HSV color space
-    Returns
-    -------
-    tuple (r, g, b)
-        Color in the RGB color space
-    """
-    
-    # Scale from 0 .. 360, 0 .. 100, 0 .. 100 to 0.0 .. 1.0
-    (h, s, v) = hsv_color
-    h = h / 360.0
-    s = s / 100.0
-    v = v / 100.0
+            .led-index {
+                text-align: center;
+                margin-bottom: 0.5em;
+            }
 
-    i = math.floor(h*6)
-    f = h*6 - i
-    p = v * (1-s)
-    q = v * (1-f*s)
-    t = v * (1-(1-f)*s)
+            .led-inner div label {
+                text-align: right;
+                min-width: 1em;
+                float: left;
+            }
 
-    r, g, b = [
-        (v, t, p),
-        (q, v, p),
-        (p, v, t),
-        (p, q, v),
-        (t, p, v),
-        (v, p, q),
-    ][int(i%6)]
-    
-    r = math.trunc(255 * r)
-    g = math.trunc(255 * g)
-    b = math.trunc(255 * b)
-    return r, g, b
+            .led-inner div.range {
+                width: 20em;    
+            }   
 
-def setManualControl(manual):
-    neoPixelLock.acquire()
-    try:
-        if manual:
-            logger.write('Switching to remote control')
-        else:
-            logger.write('Switching to animation control')
+            .led-inner span.value {
+                width: 4em;
+                text-align: right;
+            }
+
+            #swatch {
+                background-color: blue;
+            }
+
+            #rgbHex {
+                text-align: center;
+                margin-top: 0.5em;
+            }
+
+            </style>
+        </head>
+    <body>
             
-        manualControl = manual
-    finally:
-        neoPixelLock.release()
-        
-def randomColor():
-    return hsv_to_rgb((random.randint(0, 360), 100, random.randint(5, 100)))
-                      
-def beginUpdate():
-    global updating
-    
-    updating += 1
+        <h1>Heinrichsweg 9</h1>
 
-def formatPixel(pixel):
-    return ''.join('{:02x}'.format(a) for a in pixel)
-    
-    #return pixel[0].to_bytes(1, "big").hex()+pixel[1].to_bytes(1, "big").hex()+pixel[2].to_bytes(1, "big").hex()
+        <div class="led" id="led0"">
+            <div class="led-outer"><div class="led-center"><div class="led-inner">
+                <div class="led-index">#0</div>
+                <div>
+                    <label for="slider_r">R</label>
+                    <div class="range"><input type="range" min="0" max="255" value="0" class="slider" id="slider_r"><span class="value" id="value_r"></span></div>
+                </div>
+                <div>
+                    <label for="slider_g">G</label>
+                    <div class="range"><input type="range" min="0" max="255" value="0" class="slider" id="slider_g"><span class="value" id="value_g"></span></div>
+                </div>
+                <div>
+                    <label for="slider_b">B</label>
+                    <div class="range"><input type="range" min="0" max="255" value="0" class="slider" id="slider_b"><span class="value" id="value_b"></span></div>
+                </div>
+                <div>
+                    <label for="slider_h">H</label>
+                    <div class="range"><input type="range" min="0" max="360" value="0" class="slider" id="slider_h"><span class="value" id="value_h"></span></div>
+                </div>
+                <div>
+                    <label for="slider_s">S</label>
+                    <div class="range"><input type="range" min="0" max="100" value="0" class="slider" id="slider_s"><span class="value" id="value_s"></span></div>
+                </div>
+                <div>
+                    <label for="slider_v">V</label>
+                    <div class="range"><input type="range" min="0" max="100" value="0" class="slider" id="slider_v"><span class="value" id="value_v"></span></div>
+                </div>
+                <div id="rgbHex"></div>
+            </div></div></div>
+        </div>
 
-def formatPixels(pixels):    
-    result = ''
-    for pixel in pixels:
-        if result != '':
-            result += ','
-        result += formatPixel(pixel)
-        
-    return '<' + result + '>'
+    </body>
 
-def endUpdate():
-    global updating
-    
-    if updating > 0:
-        updating -= 1
-        
-    if updating == 0:
-        neoPixels.write()
-        
-def setNeoPixel(neoPixelIndex, pixel):
-    neoPixelLock.acquire()
-    try:
-        neoPixels[neoPixelIndex] = pixel
-        if updating == 0:
-            neoPixels.write()
-    finally:
-        neoPixelLock.release()
+    <script>
+        var rgb = [[0,0,0]]; // [[0..255, 0..255, 0..255], [..], [..]]
+        var hsv = [[0,0,0]]; // [[0.0 .. 1.0, 0.0 .. 1.0, 0.0 .. 1.0], [..], [..]]
 
-def setNeoPixels(pixels):
-    neoPixelLock.acquire()
-    try:
-        neoPixelIndex = 0
-        for pixel in pixels:            
-            neoPixels[neoPixelIndex] = pixel
-            neoPixelIndex += 1
+        var inflight = null;
+        
+        function rgbToHsv() {
+            var ledcount = rgb.length;
+            for (var ledindex = 0; ledindex < ledcount; ledindex++) { 
+                var r = rgb[ledindex][0] / 255.0;
+                var g = rgb[ledindex][1] / 255.0;
+                var b = rgb[ledindex][2] / 255.0;
+                
+                var max = Math.max(r, g, b), min = Math.min(r, g, b);
+                var h, s, v = max;
+
+                var d = max - min;
+                s = max == 0 ? 0 : d / max;
+
+                if (max == min) {
+                    h = 0; // achromatic
+                } else {
+                    switch (max) {
+                    case r: h = (g - b) / d + (g < b ? 6 : 0); break;
+                    case g: h = (b - r) / d + 2; break;
+                    case b: h = (r - g) / d + 4; break;
+                    }
+
+                    h = h/6;
+                }
+
+                hsv[ledindex] = [h, s, v];
+            }
+        }
+
+        function hsvToRgb() {
+            var ledcount = rgb.length;
+            for (var ledindex = 0; ledindex < ledcount; ledindex++) { 
+                var h = hsv[ledindex][0];
+                var s = hsv[ledindex][1];
+                var v = hsv[ledindex][2];
+                
+                var r, g, b;
+
+                var i = Math.floor(h * 6);
+                var f = h * 6 - i;
+                var p = v * (1 - s);
+                var q = v * (1 - f * s);
+                var t = v * (1 - (1 - f) * s);
+
+                switch (i % 6) {
+                    case 0: r = v, g = t, b = p; break;
+                    case 1: r = q, g = v, b = p; break;
+                    case 2: r = p, g = v, b = t; break;
+                    case 3: r = p, g = q, b = v; break;
+                    case 4: r = t, g = p, b = v; break;
+                    case 5: r = v, g = p, b = q; break;
+                }
+
+                rgb[ledindex] = [Math.trunc(r*255), Math.trunc(g*255), Math.trunc(b*255)];
+            }
+        }
+
+        function toHex(n) {
+            n = Math.max(0, Math.min(Math.trunc(n),255)); // clamp
+            return "0123456789abcdef".charAt((n-n%16)/16) + "0123456789abcdef".charAt(n%16);
+        }
+
+        function updateUI() {
+            console.log("updateUI()");
+
+            var ledcount = rgb.length;
+            for (var ledindex = 0; ledindex < ledcount; ledindex++) { 
+                leddiv = $("#led" + ledindex);
+
+                leddiv.find("#slider_r").val(rgb[ledindex][0]);
+                leddiv.find("#slider_g").val(rgb[ledindex][1]);
+                leddiv.find("#slider_b").val(rgb[ledindex][2]);
+
+                leddiv.find("#value_r").text(rgb[ledindex][0]);
+                leddiv.find("#value_g").text(rgb[ledindex][1]);
+                leddiv.find("#value_b").text(rgb[ledindex][2]);
+                
+                leddiv.find("#slider_h").val(Math.trunc(hsv[ledindex][0] * 360));
+                leddiv.find("#slider_s").val(Math.trunc(hsv[ledindex][1] * 100));
+                leddiv.find("#slider_v").val(Math.trunc(hsv[ledindex][2] * 100));
+
+                leddiv.find("#value_h").text(Math.trunc(hsv[ledindex][0] * 360));
+                leddiv.find("#value_s").text(Math.trunc(hsv[ledindex][1] * 100));
+                leddiv.find("#value_v").text(Math.trunc(hsv[ledindex][2] * 100));
+
+                rgbhex = "#" + toHex(rgb[ledindex][0]) + toHex(rgb[ledindex][1]) + toHex(rgb[ledindex][2]);
+                leddiv.find("#rgbHex").text(rgbhex);
+                leddiv.find(".led-center").css("border-color", rgbhex);
+            }
+        }
+
+        function postLEDs() {
+            params = "";
+
+            var ledcount = rgb.length;
+            for (var ledindex = 0; ledindex < ledcount; ledindex++) { 
+                if (params) {
+                    params += "&";
+                }                        
+                params += "r" + ledindex + "=" + rgb[ledindex][0] + "&g" + ledindex +"=" + rgb[ledindex][1] + "&b" + ledindex + "=" + rgb[ledindex][2];
+            }
+
+            url = "/set?" + params
+            // console.log("postLEDs() " + url);
             
-        if updating == 0:
-            neoPixels.write()
-    finally:
-        neoPixelLock.release()
+            $.post(url); // don't care about any results.
+        }
 
-def blendPixel(pixel1, pixel2, blend):
-    result = [0, 0, 0]
-    
-    if blend < 0.0:
-        blend = 0.0
-    elif blend > 1.0:
-        blend = 1.0
-    
-    for channel in range(3):
-        result[channel] = math.trunc(pixel1[channel] * (1.0 - blend) + pixel2[channel] * blend)
-        
-    return result
+        $(document).ready(function() {
+            
+            // Clone UI from led #0 to the rest.
+            led0div = $("#led0");
 
-def blendPixels(pixels1, pixels2, blend):
-    result = [0, 0, 0]
-    
-    if blend < 0.0:
-        blend = 0.0
-    elif blend > 1.0:
-        blend = 1.0
-    
-    result = [blendPixel(pixels1[i], pixels2[i], blend) for i in range(neoPixelCount)]
-    
-    return result
+            for(i = 7 ; i >= 1 ; i--)
+            {
+                leddiv = led0div.clone().prop("id", "led" + i);
+                leddiv.find(".led-index").text("#" + i);
+                
+                led0div.after(leddiv);
 
-def Off():
-    pixels = [[0,0,0]] * neoPixelCount
-    setNeoPixels(pixels)
+                // All LEDs are initialized the same.
+                rgb.push([rgb[0][0], rgb[0][1], rgb[0][2]]); // Force a deep copy.
+                hsv.push([0, 0, 0]); // Values do not matter, they will be calculated from RGB.
+            }
+
+            // Wire controls.
+            $("input[type=range]").on("input", function() {
+                ledindex = $(this).parents(".led").attr("id").substring(3);
+                console.log("changing led #" + ledindex);
+
+                switch ($(this).attr("id") ) {
+                    case "slider_r":
+                        rgb[ledindex][0] = $(this).val();
+                        rgbToHsv();
+                        break;
+                    case "slider_g":
+                        rgb[ledindex][1] = $(this).val();
+                        rgbToHsv();
+                        break;
+                    case "slider_b":
+                        rgb[ledindex][2] = $(this).val();
+                        rgbToHsv();
+                        break;
+                    case "slider_h":
+                        hsv[ledindex][0] = $(this).val() / 360.0;
+                        hsvToRgb();
+                        break;
+                    case "slider_s":
+                        hsv[ledindex][1] = $(this).val() / 100.0;
+                        hsvToRgb();
+                        break;
+                    case "slider_v":
+                        hsv[ledindex][2] = $(this).val() / 100.0;
+                        hsvToRgb();
+                        break;
+                    default:
+                        console.log("unhandled " + $(this).attr("id"));
+                        break;
+                }
+                
+                updateUI();
+            
+                clearTimeout(inflight)
+                inflight = setTimeout(postLEDs, 100);
+            });
+
+            // Calculate initial HSV values.
+            rgbToHsv();
+
+            // Update the UI once.
+            updateUI();
+            
+            // Synchronize physical LEDs to UI.
+            // postLEDs(); // Don't. We only want to do that when the user actually changes something in the UI.
+        });    
+    </script>
     
-if __name__ == "__main__":
-    logger.write("__main__: All pixels off")
-    Off()
-    
-    
+</html>
