@@ -1,6 +1,6 @@
-<!DOCTYPE html>
-<html>
-    <head>
+-TileColor" content="#da532c">
+        <meta name="theme-color" content="#ffffff">
+
         <script src="https://code.jquery.com/jquery-3.6.1.min.js"></script>
         <style>
             .led {
@@ -268,7 +268,7 @@
             updateUI();
             
             // Synchronize physical LEDs to UI.
-            postLEDs();
+            // postLEDs(); // Don't. We want the animation to keep running until the user actually makes a change.
         });    
     </script>
     
