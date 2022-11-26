@@ -126,6 +126,36 @@ def HSVToRGB(hsv_color):
 def randomColor():
     return HSVToRGB((random.randint(0,360), 255, random.randint(5,255)))
 
+def clamp(channel, min=0, max=255):
+    if channel < min:
+        channel = min
+    elif channel > max:
+        channel = max
+        
+    return channel
+
+'''
+Scale the channels of pixel by a floating point scalefactor. The factor is arbitrary,
+the results are truncated and clamped.
+'''
+def scalePixel(pixel, scalefactor):
+    return (
+        clamp(math.trunc(pixel[0] * float(scalefactor))),
+        clamp(math.trunc(pixel[1] * float(scalefactor))),
+        clamp(math.trunc(pixel[2] * float(scalefactor)))
+    )
+
+'''
+Scale all pixels by a floating point scalefactor. The factor is arbitrary,
+the results are truncated and clamped.
+'''
+def scalePixels(pixels , scalefactor):
+    result = [(0, 0, 0)] * pixelCount
+    for pixelIndex in range(pixelCount):
+        result[pixelIndex] = scalePixel(pixels[pixelIndex], scalefactor)
+        
+    return result
+
 ''' 
 Blend between two single pixels, blend is a float between 0 and 1.
 '''

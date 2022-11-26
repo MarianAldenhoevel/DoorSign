@@ -7,6 +7,7 @@ It associated thread-IDs with readable names and synchronizes print()s
 import _thread
 
 logger_lock = _thread.allocate_lock()
+fs_lock = _thread.allocate_lock()
 
 thread_names = {}
 
@@ -21,7 +22,18 @@ def register_thread_name(name):
         else:
             del thread_names[_thread.get_ident()]
     finally:
-        loger_lock.release()
+        logger_lock.release()
+
+'''
+If the thread has registered a nice ID use that
+'''
+def get_thread_id():
+    if _thread.get_ident() in thread_names:
+        id = thread_names[_thread.get_ident()]
+    else:
+        id = str(_thread.get_ident())
+        
+    return id
 
 '''
 Synchronized print() decorated with the thread name/ID
@@ -29,15 +41,11 @@ Synchronized print() decorated with the thread name/ID
 def write(msg):
     logger_lock.acquire()
     try:
-        # If the thread has registered a nice name use that.
-        if _thread.get_ident() in thread_names:
-            id = thread_names[_thread.get_ident()]
-        else:
-            id = str(_thread.get_ident())
-
-        print('[' + id + '] ' + msg)
+        print('[' + get_thread_id() + '] ' + msg)
     finally:
         logger_lock.release()
         
 if __name__ == '__main__':
-    logger.write('__main__: No code')
+    
+    write('__main__: No code')
+

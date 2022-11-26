@@ -17,7 +17,7 @@ import core1
 import logger
 import doorsign
 
-def main():
+def Main():
     # Here we go!
     logger.write('Doorsign firmware 0.0')
     logger.write('2022 marian.aldenhoevel@marian-aldenhoevel.de')
@@ -30,6 +30,16 @@ def main():
     # Turn off all neopixels in case the are left on from an old run.
     doorsign.off()
 
+    # Load configuration
+    
+    machine.PWRON_RESET
+machine.HARD_RESET
+machine.WDT_RESET
+machine.DEEPSLEEP_RESET
+machine.SOFT_RESET
+
+    logger.write(str(machine.reset_cause()))
+
     # Wait a while to allow for a CTRL-C in case the code is broken
     # and cannot be stopped later.
     logger.write('Standing by for KeyboardInterrupt')
@@ -38,8 +48,11 @@ def main():
 
     logger.write('Starting up')
 
+    core0.setup()
+    core1.setup()
+
     # Start both threads.
-    _thread.start_new_thread(core1.task, ())
+    _thread.start_new_thread(core1.task, ()) # NO braces after core1.task, we are passing the function...
     core0.task()
 
     # We really don't expect to get here.
@@ -50,4 +63,4 @@ def main():
         time.sleep(0.1)
 
 if __name__ == '__main__':
-    main()
+    Main()

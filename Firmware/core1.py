@@ -16,21 +16,31 @@ Care is taken that all enabled animations are used and never back-to-back.
 animation_switch_interval_ms = 30000 # Time in ms before animations are switched-
 animation_blend_ms = 5000 # Blend time between animations.
 
+final_dimmer = 0.2
+
 import machine
 import time
 import logger
 import doorsign
 import random
 import os
+import watchdog
 
 def task():
 
-    register_thread_name('ANIM')
+    logger.register_thread_name('ANIM')
+    watchdog.feed() # First feed to make us known to the WDT
     logger.write('Animation task starting')
     
     # Import all modules named animation_*.py:
     # List files, filter by name, strip off the .py extension, load as module and finally filter by their enabled variable.
-    animationfiles = filter(lambda file: file.startswith('animation_') and file.endswith('.py'), os.listdir())
+    logger.write('Listing animation modules')
+    logger.fs_lock.acquire()
+    try:
+        animationfiles = filter(lambda file: file.startswith('animation_') and file.endswith('.py'), os.listdir())
+    finally:
+        logger.fs_lock.release()
+        
     modulenames = list(map(lambda file: file.split('.')[0], animationfiles))
     animations = list(map(__import__, modulenames))        
     animations = list(filter(lambda animation: animation.enabled, animations))
@@ -63,9 +73,11 @@ def task():
     next_animation = None
 
     '''
-    Main loop
+    Main animation loop
     '''
     while True:
+        #watchdog.feed()
+            
         frame_ms = time.ticks_ms()
         
         if (active_animation):
@@ -119,7 +131,9 @@ def task():
         else:
             # No animation at all. All off.
             pixels = [[0, 0, 0]] * doorsign.pixelCount
-            
+        
+        pixels = doorsign.scalePixels(pixels, final_dimmer);
+        
         # Output the pixels only if currently not under manual control. Animation
         # keeps running.
         if not doorsign.manual_control:

@@ -26,6 +26,7 @@ import select
 import ujson
 import logger
 import doorsign
+import watchdog
 
 onboard = machine.Pin('LED', machine.Pin.OUT)
 myip = None
@@ -239,9 +240,13 @@ def handleHttp(socket):
 
                 if (method == 'GET') or (method == 'HEAD'):        
                     # Load the resource.
-                    with open('/www/' + resource, 'rb') as file:
-                        response = file.read()
-    
+                    logger.fs_lock.acquire()
+                    try:
+                        with open('/www/' + resource, 'rb') as file:
+                            response = file.read()
+                    finally:
+                        logger.fs_lock.release()
+                    
                     statuscode = 200
                     statustext = 'OK'
             
@@ -252,12 +257,13 @@ def handleHttp(socket):
                         doorsign.setManualControl(True)
                         doorsign.beginUpdate()
                         try:                    
-                            for pixelIndex in range(doorsign.pixelCount):
+                            for pixelIndex in range(doorsign.pixelCount):                                
                                 pixel = (
-                                    int(params.get('r' + str(i), 0)),
-                                    int(params.get('g' + str(i), 0)),
-                                    int(params.get('b' + str(i), 0)),
+                                    int(params.get('r' + str(pixelIndex), 0)),
+                                    int(params.get('g' + str(pixelIndex), 0)),
+                                    int(params.get('b' + str(pixelIndex), 0)),
                                 )
+                                print(pixel)
                                 doorsign.setPixel(pixelIndex, pixel)
                         finally:
                             # End pixel update phase. This will send the data out to the LEDs.
@@ -290,7 +296,7 @@ def handleHttp(socket):
             except BaseException as e:
                 response = ''
                 statuscode = 500
-                statustext = 'Internal Server Error (' + str(e) + '')'
+                statustext = 'Internal Server Error (' + str(e) + ')'
                     
             finally:
                 logger.write(addr[0] + ' ' + method + ' \"' + resource + (('?' + paramstr) if paramstr else '') + '\" ' + str(statuscode) + ' ' + statustext + ((' (' + str(len(response)) + ' bytes of ' + contenttype + ')') if response else '')) 
@@ -319,15 +325,21 @@ def task():
 
     global myIP
     
-    register_thread_name('NET')
+    logger.register_thread_name('NET')
+    watchdog.feed() # First feed to make us known to the WDT
     logger.write('Network task starting')
     onboard.on()
 
     rp2.country('DE')
 
     # Load configuration
-    with open('config.json') as fp:
-        config = ujson.load(fp)
+    logger.write('Reading config.json')
+    logger.fs_lock.acquire()
+    try:
+        with open('config.json') as fp:
+            config = ujson.load(fp)
+    finally:
+        logger.fs_lock.release()
     
     if ('STA' in config) and ('AP' in config):
         fatalConnectionError(2, 'Configuration error: Both STA and AP defined in config')
@@ -363,6 +375,7 @@ def task():
     if wlan.isconnected():
         logger.write('Disconnecting from stale connection')
         time.sleep(2)
+        watchdog.feed()
     
     if 'STA' in config:
         logger.write('Connecting to: ' + config['STA']['ssid'] + (' /w password' if config['STA']['pw'] else ''))
@@ -377,7 +390,8 @@ def task():
             timeout -= 1
             logger.write('Waiting for connection...')
             time.sleep(1)
-
+            watchdog.feed()
+            
         onboard.off()
             
         # Handle connection error
@@ -436,8 +450,10 @@ def task():
 
         logger.write('Http server listening on ' + str(addr))
         
-        # Wait for connections.
+        # Main loop: Wait for connections and service them.
         while True:
+            watchdog.feed()
+            
             readable, writeable, errored = select.select(inputsockets, [], [], 1)
             
             for s in readable:
