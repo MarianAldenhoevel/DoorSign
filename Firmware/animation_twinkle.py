@@ -14,9 +14,6 @@ import animation
 lastframe_ms = None
 pixels = None
 
-blendstart_ms = None
-blend_ms = 1000
-
 def update(frame_ms, first_frame = False):
     global lastframe_ms
     global pixels

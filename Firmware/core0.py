@@ -30,7 +30,16 @@ import watchdog
 
 onboard = machine.Pin('LED', machine.Pin.OUT)
 myip = None
+config = None
 
+def setup():
+    global config
+    
+    # Load configuration
+    logger.write('Reading config.json')
+    with open('config.json') as fp:
+        config = ujson.load(fp)
+    
 '''
 When the task fails to make a connection it blinks an error code on the
 onboard LED
@@ -332,15 +341,6 @@ def task():
 
     rp2.country('DE')
 
-    # Load configuration
-    logger.write('Reading config.json')
-    logger.fs_lock.acquire()
-    try:
-        with open('config.json') as fp:
-            config = ujson.load(fp)
-    finally:
-        logger.fs_lock.release()
-    
     if ('STA' in config) and ('AP' in config):
         fatalConnectionError(2, 'Configuration error: Both STA and AP defined in config')
     elif 'STA' in config:
@@ -452,6 +452,9 @@ def task():
         
         # Main loop: Wait for connections and service them.
         while True:
+            
+            # "http://worldtimeapi.org/api/timezone/Etc/UTC"
+            
             watchdog.feed()
             
             readable, writeable, errored = select.select(inputsockets, [], [], 1)
@@ -471,5 +474,6 @@ def task():
 if __name__ == '__main__':
 
     logger.write('Running stand-alone task()')
+    setup()
     task()
     logger.write('task() exited')

@@ -7,7 +7,6 @@ It associated thread-IDs with readable names and synchronizes print()s
 import _thread
 
 logger_lock = _thread.allocate_lock()
-fs_lock = _thread.allocate_lock()
 
 thread_names = {}
 

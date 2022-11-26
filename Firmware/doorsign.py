@@ -157,10 +157,11 @@ def scalePixels(pixels , scalefactor):
     return result
 
 ''' 
-Blend between two single pixels, blend is a float between 0 and 1.
+Linear blend between two single pixels, blend is a float between 0 and 1.
 '''
-def blendPixel(pixel1, pixel2, blend):
+def blendPixelLinear(pixel1, pixel2, blend):
     
+    # Clamp blend value
     if blend < 0.0:
         blend = 0.0
     elif blend > 1.0:
@@ -169,11 +170,70 @@ def blendPixel(pixel1, pixel2, blend):
     return (
         math.trunc(pixel1[0] * (1.0-blend) + pixel2[0] * blend),
         math.trunc(pixel1[1] * (1.0-blend) + pixel2[1] * blend),
-        math.trunc(pixel1[2] * (1.0-blend) + pixel2[2] * blend),
+        math.trunc(pixel1[2] * (1.0-blend) + pixel2[2] * blend)
     )
         
 '''
-Blend two complete pixel arrays, blend is a float between 0 and 1.
+Linear blend between two complete pixel arrays, blend is a float between 0 and 1.
+'''
+def blendPixelsLinear(pixels1, pixels2, blend):
+    result = [(0, 0, 0)] * pixelCount
+    for pixelIndex in range(pixelCount):
+        result[pixelIndex] = blendPixelLinear(pixels1[pixelIndex], pixels2[pixelIndex], blend)
+        
+    return result
+
+''' 
+More clever blend between two single pixels, blend is a float between 0 and 1.
+
+The blend happens in HSV space with H going the "short way".
+'''
+def blendPixel(pixel1, pixel2, blend):
+    
+    # Clamp blend value
+    if blend < 0.0:
+        blend = 0.0
+    elif blend > 1.0:
+        blend = 1.0
+
+    # Convert pixels to HSV space.
+    hsv1 = RGBToHSV(pixel1)
+    hsv2 = RGBToHSV(pixel2)
+    
+    # print('hsv1 ' + str(hsv1))
+    # print('hsv2 ' + str(hsv2))
+    
+    # Swap so that Pixel2 has the larger H value.
+    if hsv1[0] > hsv2[0]:
+        hsv1, hsv2 = hsv2, hsv1 # Very pythonic swap.
+        blend = 1.0 - blend;
+  
+    # The hue value wraps around at 360. We want it to blend along the
+    # shortest arc. If the direct difference is greater than 180 go
+    # the other way.
+    if hsv2[0] - hsv1[0] > 180:
+        h = (hsv1[0] + 360) * (1.0 - blend) + hsv2[0] * blend
+        if h > 360:
+            h -= 360
+    else:
+        h = hsv1[0] * (1.0 - blend) + hsv2[0] * blend
+    
+    # Blend S and V linearly.
+    hsv = (
+        math.trunc(h),
+        math.trunc(hsv1[1] * (1.0-blend) + hsv2[1] * blend),
+        math.trunc(hsv1[2] * (1.0-blend) + hsv2[2] * blend)
+    )
+    
+    # print('hsv  ' + str(hsv))
+    
+    # Return as RBG value
+    return HSVToRGB(hsv)
+
+'''
+More clever blend between two single pixels, blend is a float between 0 and 1.
+
+The blend happens in HSV space with H going the "short way".
 '''
 def blendPixels(pixels1, pixels2, blend):
     result = [(0, 0, 0)] * pixelCount

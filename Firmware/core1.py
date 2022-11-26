@@ -26,57 +26,64 @@ import random
 import os
 import watchdog
 
+animations = []
+
+'''
+Set up the animations by dynamically loading modules according to a naming convention
+'''
+def setup():
+    global animations
+    
+    # Import all modules named animation_*.py:
+    # List files, filter by name, strip off the .py extension, load as module and finally filter by their enabled variable.
+    logger.write('Loading animation modules')
+    animationfiles = filter(lambda file: file.startswith('animation_') and file.endswith('.py'), os.listdir())        
+    modulenames = list(map(lambda file: file.split('.')[0], animationfiles))
+    animations = list(map(__import__, modulenames))        
+    animations = list(filter(lambda animation: animation.enabled, animations))
+    
+    if len(animations) == 0:
+        logger.write('No animations available')
+        return
+    elif len(animations) > 1:
+        logger.write('Available animations: ' + ', '.join(animation.__name__ for animation in animations))
+    
 def task():
 
     logger.register_thread_name('ANIM')
     watchdog.feed() # First feed to make us known to the WDT
     logger.write('Animation task starting')
     
-    # Import all modules named animation_*.py:
-    # List files, filter by name, strip off the .py extension, load as module and finally filter by their enabled variable.
-    logger.write('Listing animation modules')
-    logger.fs_lock.acquire()
-    try:
-        animationfiles = filter(lambda file: file.startswith('animation_') and file.endswith('.py'), os.listdir())
-    finally:
-        logger.fs_lock.release()
-        
-    modulenames = list(map(lambda file: file.split('.')[0], animationfiles))
-    animations = list(map(__import__, modulenames))        
-    animations = list(filter(lambda animation: animation.enabled, animations))
-    
-    animationcount = len(animations)
-    if animationcount == 0:
-        logger.write('No animations available')
-        return
-    elif animationcount > 1:
-        logger.write('Available animations: ' + ', '.join(animation.__name__ for animation in animations))
-    
     # Initialize two arrays. new_animations holds the animation modules that can be picked, the other
     # holds the ones that have already been run to implement draw without put back.
     new_animations = animations[:]
     old_animations = []
-    
+
+    active_animation = None
+    next_animation = None
+
     # Randomly pick the first animation to execute. We are guaranteed to have one 
     # because we returned if we didn't.
-    active_animation = random.choice(new_animations)
-    new_animations.remove(active_animation)
-    old_animations.append(active_animation)
-    if len(new_animations) == 0:
-        new_animations = old_animations
-        old_animations = []
-    active_animation_start_ms = time.ticks_ms()
-    
-    if animationcount > 1:
-        logger.write('First animation: ' + active_animation.__name__)
-    
+    if len(animations) > 0:
+        active_animation = random.choice(new_animations)
+        new_animations.remove(active_animation)
+        old_animations.append(active_animation)
+        if len(new_animations) == 0:
+            new_animations = old_animations
+            old_animations = []
+        active_animation_start_ms = time.ticks_ms()
+        
+        logger.write(('First' if len(animations) > 1 else 'Active') + ' animation: ' + active_animation.__name__)
+    else:
+        logger.write('No animation module enabled')
+        
     next_animation = None
 
     '''
     Main animation loop
     '''
     while True:
-        #watchdog.feed()
+        watchdog.feed()
             
         frame_ms = time.ticks_ms()
         
@@ -111,7 +118,7 @@ def task():
                 pixels = active_pixels
                 
                 # Do we have a next animation in our portfolio and do we want it now?
-                if (animationcount >= 2) and (time.ticks_diff(frame_ms, active_animation_start_ms) >= animation_switch_interval_ms):
+                if (len(animations) >= 2) and (time.ticks_diff(frame_ms, active_animation_start_ms) >= animation_switch_interval_ms):
                     # Pick a next animation to execute. Brutally sample until we do not 
                     # get the same as the active one.           
                     while True:
@@ -150,5 +157,6 @@ def task():
 if __name__ == '__main__':
     
     logger.write('Running stand-alone task()')
+    setup()
     task()
     logger.write('task() exited')

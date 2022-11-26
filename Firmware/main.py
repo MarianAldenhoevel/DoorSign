@@ -16,6 +16,7 @@ import core0
 import core1
 import logger
 import doorsign
+import watchdog
 
 def Main():
     # Here we go!
@@ -30,15 +31,21 @@ def Main():
     # Turn off all neopixels in case the are left on from an old run.
     doorsign.off()
 
-    # Load configuration
-    
-    machine.PWRON_RESET
-machine.HARD_RESET
-machine.WDT_RESET
-machine.DEEPSLEEP_RESET
-machine.SOFT_RESET
-
-    logger.write(str(machine.reset_cause()))
+    # Report on what we think caused us to lose consciousness last.
+    mrc = machine.reset_cause()
+    if mrc == machine.PWRON_RESET:
+        mrc = 'PWRON_RESET'
+    #elif mrc == machine.HARD_RESET:
+    #    mrc = 'HARD_RESET'
+    elif mrc == machine.WDT_RESET:
+        mrc = 'WDT_RESET'
+    elif mrc == machine.DEEPSLEEP_RESET:
+        mrc = 'DEEPSLEEP_RESET'
+    elif mrc == machine.SOFT_RESET:
+        mrc = 'SOFT_RESET'
+    else:
+        mrc = str(mrc)
+    logger.write('Last reset cause was ' + mrc)
 
     # Wait a while to allow for a CTRL-C in case the code is broken
     # and cannot be stopped later.
@@ -48,8 +55,12 @@ machine.SOFT_RESET
 
     logger.write('Starting up')
 
+    # Give each task a chance to set up in a single threaded environment.
     core0.setup()
-    core1.setup()
+    core1.setup()j
+
+    # Enable hardware watchdog timer.
+    watchdog.enable()
 
     # Start both threads.
     _thread.start_new_thread(core1.task, ()) # NO braces after core1.task, we are passing the function...

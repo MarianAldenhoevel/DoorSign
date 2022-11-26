@@ -25,15 +25,19 @@ wdt_lock = _thread.allocate_lock()
         
 thread_feed_ms = {}
     
-def enable_WDT():
-    wdt = machine.WDT(0, 2 * watchdog_interval_ms)
+def enable():
+    global wdt
+    
+    logger.write('Enabling hardware watchdog timer')
+    wdt = machine.WDT(0, 8000)
     
 '''
 Process a feed from one thread.
 '''
 def feed():
+    global wdt
     global wdt_simulated_reset_occured
-    
+
     wdt_lock.acquire()
     try:
         # Record ticks for the calling thread.
@@ -43,7 +47,7 @@ def feed():
         # the watchdog if they are all fresh enough.
         for tf in thread_feed_ms.items():            
             age = time.ticks_diff(time.ticks_ms(), tf[1])
-            logger.write(str(tf) + ', ' + str(age) + ', ' + str(age>watchdog_interval_ms))
+            # logger.write(str(tf) + ', ' + str(age) + ', ' + str(age>watchdog_interval_ms))
             if age > watchdog_interval_ms:
                 # This one is too old. Report simulated timeout.
                 if not wdt_simulated_reset_occured:
