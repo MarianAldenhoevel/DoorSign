@@ -27,6 +27,12 @@ updating = 0
 
 np = NeoPixel(machine.Pin(4, machine.Pin.OUT), pixelCount)
 
+adc = [
+    machine.ADC(26),	# ADC0
+    machine.ADC(28),	# ADC1
+    machine.ADC(28)		# ADC2
+]
+
 frame_intervall_ms = 1000//framerate # How many ms per frame?
 
 manual_control = False
@@ -262,6 +268,32 @@ def setPixels(pixels):
             setPixel(pixelIndex, pixels[pixelIndex])            
     finally:
         endUpdate()        
+
+''' 
+Read a single pixel.
+'''            
+def getPixel(pixelIndex):
+    beginUpdate()
+    try:
+        pixel = np[pixelIndex]
+    finally:
+        endUpdate()
+        
+    return pixel
+
+'''
+Read all pixels.
+'''    
+def getPixels():
+    beginUpdate()
+    try:
+        pixels = [(0,0,0)] * pixelCount
+        for pixelIndex in range(pixelCount):
+            pixels[pixelIndex] = getPixel(pixelIndex)            
+    finally:
+        endUpdate()
+        
+    return pixels
 
 '''
 Turn all pixels off

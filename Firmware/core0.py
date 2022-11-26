@@ -175,6 +175,23 @@ def handleDNS(socket):
         onboard.off()
 
 '''
+Build a representation of the sensors and led settings
+'''
+def apiData():
+    result = {}
+    
+    doorsign.beginUpdate()
+    try:
+        result['manual_control'] = doorsign.manual_control
+        result['pixels'] =	doorsign.getPixels()            
+        for adcIndex in range(3):
+            result['adc' + str(adcIndex)] = doorsign.adc[adcIndex].read_u16()     
+    finally:
+        doorsign.endUpdate()
+    
+    return result
+
+'''
 This function implements the complete handling of a http request.
 ''' 
 def handleHttp(socket):
@@ -209,7 +226,7 @@ def handleHttp(socket):
                     resource = resource[0:i]                
                 else:
                     paramstr = ''
-                
+                            
                 # Parse query parameters into a dictionary by name and value.
                 params = {}
                 for p in paramstr.split('&'):
@@ -223,6 +240,8 @@ def handleHttp(socket):
             
                     params[name] = value
         
+                print(params)
+    
                 # Default to index page.
                 if (resource == ''):
                     resource = 'index.html'
@@ -250,40 +269,60 @@ def handleHttp(socket):
                 # answers with (minimal) dynamic content to POST requests.
 
                 if (method == 'GET') or (method == 'HEAD'):        
-                    # Load the resource.
-                    logger.fs_lock.acquire()
-                    try:
+                    
+                    if (resource == 'api'):
+                        # Return sensor data and LED status
+                        response = ujson.dumps(apiData())
+                        contenttype = 'application/json'            
+                    else:   
+                    # Load a static resource.
                         with open('/www/' + resource, 'rb') as file:
                             response = file.read()
-                    finally:
-                        logger.fs_lock.release()
-                    
+                        
                     statuscode = 200
                     statustext = 'OK'
             
                 elif method == 'POST':
                     
-                    if resource == 'set':
-                        # Disable animation on the pixels. And indicate beginning of an update.
-                        doorsign.setManualControl(True)
+                    if resource == 'api':
+                        # Read each pixel and update if there is data for that channel.
+                        hasChannelData = False
                         doorsign.beginUpdate()
-                        try:                    
-                            for pixelIndex in range(doorsign.pixelCount):                                
-                                pixel = (
-                                    int(params.get('r' + str(pixelIndex), 0)),
-                                    int(params.get('g' + str(pixelIndex), 0)),
-                                    int(params.get('b' + str(pixelIndex), 0)),
-                                )
-                                print(pixel)
-                                doorsign.setPixel(pixelIndex, pixel)
+                        try:
+                            for pixelIndex in range(doorsign.pixelCount):                                                            
+                                r, g, b = doorsign.getPixel(pixelIndex)
+                                
+                                p = 'r' + str(pixelIndex) 
+                                if p in params:
+                                    r = int(params[p])
+                                    hasChannelData = True
+                                    
+                                p = 'g' + str(pixelIndex) 
+                                if p in params:
+                                    g = int(params[p])
+                                    hasChannelData = True
+                                
+                                p = 'b' + str(pixelIndex) 
+                                if p in params:
+                                    b = int(params[p])
+                                    hasChannelData = True
+                                
+                                doorsign.setPixel(pixelIndex, (r, g, b))
                         finally:
+                            # Enable/Disable animation if explicitly asked for in the request parameters.
+                            doorsign.setManualControl(params.get('manual', doorsign.manual_control) in [True, 'true', 'True', 'TRUE', 1, '1'])
+                            
+                            # Then conditionally disable animation on the pixels if any data has been set remotely.                    
+                            if hasChannelData:
+                                doorsign.setManualControl(True)
+                        
+                            # Build response                                 
+                            response = ujson.dumps(apiData())
+                            
                             # End pixel update phase. This will send the data out to the LEDs.
                             doorsign.endUpdate()                    
 
-                        # No interesting response. Just keep AJAXers happy.    
-                        response = '{}'
-                        contenttype = 'application/json'
-            
+                        contenttype = 'application/json'            
                         statuscode = 200
                         statustext = 'OK'            
                     else:
