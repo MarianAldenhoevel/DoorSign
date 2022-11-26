@@ -1,0 +1,70 @@
+'''
+This is a template for a new animation. It lays out convention and API. Start with a comment describing the desired effect 
+'''
+
+enabled = True # This is required configuration to en- and disable animations without deleting the code
+
+'''
+Put user-serviceable configuration for the animation here. Colors, speeds etc.
+'''
+
+import time
+import math
+import random
+import doorsign
+import logger
+import animation
+
+'''
+Put code and variables for internal state here. 
+Typical usage:
+'''
+
+lastframe_ms = None
+
+def update(frame_ms, first_frame = False):
+    '''
+    This function will be called by the framework for each frame with a global tick.
+    The animation has to return an array of doorsign.pixelCount (r,g,b) tuples.
+
+    If the caller wants the animation to restart it can pass in True as second parameter.
+    '''
+
+    global lastframe_ms
+    
+    if first_frame or (lastframe_ms == None):        
+        # First frame.
+        
+        '''
+        Initialize internal state and set up pixel values for the first frame
+        '''
+        
+        pixels = [(0,0,0)] * doorsign.pixelCount
+    else:
+        # Consecutive frame.
+
+        '''
+        Use lastframe_ms and frame_ms plus internal state to calculate the
+        pixel values for this frame. Do not assume a perfect framerate,
+        always use the current tick value passed in. 
+        '''
+
+        diff = time.ticks_diff(frame_ms, blendstart_ms)
+        
+        pixels = [(0,0,0)] * doorsign.pixelCount
+
+    '''
+    Record the current frame ticks so we can use it on the next frame
+    '''        
+    lastframe_ms = frame_ms
+    
+    return pixels
+ 
+if __name__ == '__main__':
+   
+   '''
+   Call the sampling test framework so the animation can run stand-alone.
+   '''
+
+   animation.sample(update)
+   

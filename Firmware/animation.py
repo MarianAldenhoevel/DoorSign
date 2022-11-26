@@ -1,7 +1,15 @@
+'''
+Supporting code common to all animation programs.
+'''
+
 import time
 import doorsign
 import logger
 
+'''
+Called with a programs updateFunc will simulate the use in the main framework and thus
+test the program stand-alone.
+''' 
 def sample(updateFunc):
     start_ms = time.ticks_ms()
     
@@ -17,6 +25,6 @@ def sample(updateFunc):
    
         time.sleep_ms(remaining_ms)
    
-if __name__ == "__main__":
-    logger.write("__main__: No code")
+if __name__ == '__main__':
+    logger.write('__main__: No code')
     

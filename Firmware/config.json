@@ -1,11 +1,7 @@
 {
-    "STA": {
+    "_STA": {
         "ssid": "Heinrichsweg 9",
         "pw": "ZZkY23grMGpNLfP2"
-    },
-    "_STA": {
-        "ssid": "Heinrichsweg 9 GAST",
-        "pw": "Vx5653fyY"
     },
     "_AP": {
         "essid": "Heinrichsweg 9 Doorsign",

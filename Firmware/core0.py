@@ -1,3 +1,21 @@
+'''
+This implements the network task.
+
+Sets up WiFi as STA (Client) or AP (Access point) as configured in config.json
+
+If set up as AP also runs a DNS server to implement a captive portal. The implementation
+of that is right here and trivial.
+
+Then it starts a primitive web server also implemented here. The web server supports
+delivery of static resources and API endpoints all hardcoded.
+
+The network task controls the onboard LED. When setting up the LED is on, when setup
+is completed sucessfully it turns off. If an error is encountered connecting in STA mode
+a code is blinked. 
+
+In operation the LED turns on while network requests are being serviced.
+'''
+
 import rp2
 import machine
 import network
@@ -12,6 +30,10 @@ import doorsign
 onboard = machine.Pin('LED', machine.Pin.OUT)
 myip = None
 
+'''
+When the task fails to make a connection it blinks an error code on the
+onboard LED
+'''
 def fatalConnectionError(code, message):
     onboard.off()
     logger.write('FATAL: ' + str(code) + ' - ' + message)
@@ -25,15 +47,44 @@ def fatalConnectionError(code, message):
         
     raise RuntimeError(message)    
 
+'''
+Single function to handle a DNS request.
+
+Packet decoding adapted from #https://stackoverflow.com/questions/65060776/reading-dns-packet-in-python
+
+We decode the request just for giggles. We don't even use it and always respond the same.
+'''
+
+OpCodeStrs = [
+        'QUERY', 
+        'IQUERY', 
+        'STATUS', 
+        '(reserved)', 
+        'NOTIFY', 
+        'UPDATE'
+]
+
+RCodeStrs = [
+    'No Error', 
+    'Format Error', 
+    'Server Failure', 
+    'Name Error', 
+    'Not Implemented', 
+    'Refused', 
+    'XY Domain', 
+    'XY RR Set', 
+    'NX RR Set', 
+    'Not Auth', 
+    'Not Zone'
+]
+    
 def handleDNS(socket):
-    
-    OpCodeStrs = ['QUERY', 'IQUERY', 'STATUS', '(reserved)', 'NOTIFY', 'UPDATE']
-    RCodeStrs = ['No Error', 'Format Error', 'Server Failure', 'Name Error', 'Not Implemented', 'Refused', 'XY Domain', 'XY RR Set', 'NX RR Set', 'Not Auth', 'Not Zone']
-    
     try:
+        onboard.on()
+
         request, client = socket.recvfrom(1024) # Big enough for anyone?
 
-        #https://stackoverflow.com/questions/65060776/reading-dns-packet-in-python
+        # Decode DNS header.
         l = len(request)
         dnsDict = dict(
             ID      = request[0]*256+request[1],
@@ -54,6 +105,7 @@ def handleDNS(socket):
             QCLASS  = request[l-2]*256+request[l-2]
         )
 
+        # Decode some values to strings.
         OpCode = dnsDict['Opcode']
         if (OpCode >= 0) and (OpCode < len(OpCodeStrs)):
             dnsDict['OpcodeStr'] = OpCodeStrs[OpCode]
@@ -66,196 +118,214 @@ def handleDNS(socket):
         else:
             dnsDict['RCodeStr'] = str(RCode) + '?'
 
-        # Parse QNAME starting at byte #12        
+        # Parse QNAME starting at byte #12.        
         n = 12
         qname = ''
         
-        # Get field size
+        # Get field size.
         argSize = int(request[n])
         n += 1
         
-        # Is there more data?
+        # Are there more fields?
         while (argSize != 0) and (n < len(request)):
-            # Yes. Extract the substring
+            # Yes. Extract the substring and apped a period.
             qname += request[n:n+argSize].decode() + '.'
             n += argSize
                 
-            # Get next field size
+            # Get next field size.
             argSize = int(request[n])
             n += 1
             
-        dnsDict['QNAME'] = qname[:-1] # Chop off extra period we have added
+        dnsDict['QNAME'] = qname[:-1] # Chop off extra period we have added.
 
         logger.write('DNS query for \"' + dnsDict['QNAME'] + '\" from ' + client[0])
 
         # Build the response.
         response = bytearray()
-        response = request[:2] 							# Request id
-        response += b"\x81\x80" 						# Response flags
+        response = request[:2] 							# Request ID
+        response += b'\x81\x80' 						# Response flags
         response += request[4:6] + request[4:6] 		# QD/AN count
-        response += b"\x00\x00\x00\x00" 				# NS/AR count
+        response += b'\x00\x00\x00\x00' 				# NS/AR count
         response += request[12:] 						# Original request body
-        response += b"\xC0\x0C" 						# Pointer to domain name at byte 12
-        response += b"\x00\x01\x00\x01" 				# Type and class (A record / IN class)
-        response += b"\x00\x00\x00\x3C" 				# Time to live 60 seconds
-        response += b"\x00\x04" 						# Response length (4 bytes = 1 ipv4 address)
-        response += bytes(map(int, myIP.split("."))) 	# IP address parts
+        response += b'\xC0\x0C' 						# Pointer to domain name at byte 12
+        response += b'\x00\x01\x00\x01' 				# Type and class (A record / IN class)
+        response += b'\x00\x00\x00\x3C' 				# Time to live 60 seconds
+        response += b'\x00\x04' 						# Response length (4 bytes = 1 ipv4 address)
+        response += bytes(map(int, myIP.split('.'))) 	# IP address parts
         
         # And deliver it.
         socket.sendto(response, client)
-      
+
     except Exception as e:
         logger.write('Error handling DNS request ' + str(e))
 
-def handleHttp(socket):
-    cl, addr = socket.accept()
-    onboard.on()
-    
-    logger.write('Client connected from '+ str(addr))
-    
-    request = str(cl.recv(1024))
-  
-    # print(request)
-  
-    statuscode = 0
-    statustext = ''
-    method = ''
-    resource = ''
-    response = ''
-    contenttype = ''
-    
-    if len(request) > 6:
-        try:
-            method = request[2:request.find(" ")]
-            request = request[len(method) + 3:]
-            
-            resource = request[1:request.find(" ")]
-            request = request[len(resource) + 3:]
-            
-            i = resource.find("?")
-            if i != -1:
-                paramstr = resource[i+1:]
-                resource = resource[0:i]                
-            else:
-                paramstr = ""
-               
-            params = {}
-            for p in paramstr.split("&"):
-                i = p.find("=")
-                if i == -1:
-                    name = p
-                    value = ""
-                else:
-                    name = p[0:i]
-                    value = p[i+1:]
-           
-                params[name] = value
-            
-            #for key in params:
-            #    logger.write(key + "->" + params[key])
-            
-            if (resource == ""):
-                resource = "index.html"
+    finally:
+        onboard.off()
 
-            logger.write(method + " " + resource + (("?" + paramstr) if paramstr != "" else ""))
-            
-            #response = 'Hello World'
-            
-            if (method=="GET") or (method=="HEAD"):
-                with open("/www/" + resource, 'rb') as file:
-                    response = file.read()
+'''
+This function implements the complete handling of a http request.
+''' 
+def handleHttp(socket):
+    onboard.on()
+    try:
+        cl, addr = socket.accept()    
+        logger.write('Client connected from '+ str(addr))
+        
+        request = str(cl.recv(1024)) # Only read this much data. We don't care if they send any more.
+        # print(request)
     
-                ext = resource[resource.find("."):]
-                if ext==".html":
-                    contenttype = "text/html"
-                elif ext=='.ico':
-                    contenttype = "image/x-icon"
-                elif ext=='.png':
-                    contenttype = "image/png"                
-                elif ext=='.jpg':
-                    contenttype = "image/jpeg"
-                elif ext==".svg":
-                    contenttype = "image/svg+xml"
-                elif ext==".xml":
-                    contenttype = "application/xml"
-                elif ext==".js":
-                    contenttype = "text/javascript"
-                else:
-                    contenttype = "application/octet-stream"
-        
-                statuscode = 200
-                statustext = 'OK'
-        
-            elif method=="POST":
-                
-                if resource == "set":
-                    doorsign.setManualControl(True)
-                    doorsign.beginUpdate()
-                    try:                    
-                        for pixelIndex in range(doorsign.pixelCount):
-                            pixel = (
-                                int(params.get("r" + str(i), 0)),
-                                int(params.get("g" + str(i), 0)),
-                                int(params.get("b" + str(i), 0)),
-                            )
-                            doorsign.setPixel(pixelIndex, pixel)
-                    finally:
-                        doorsign.endUpdate()                    
-                        
-                response = "{}"
-                contenttype = "application/json"
-                
-                statuscode = 200
-                statustext = 'OK'            
-            
-            else:
-                raise RuntimeError("Unsupported http-method: \"" + method + "\"")
-                                                
-        except OSError as e:
-                
-            if e.errno == errno.ENOENT:
-                response = ''
-                statuscode = 404
-                statustext = "Not Found"
-            else:
-                response = ''        
-                statuscode = 500
-                statustext = "Internal Server Error (" + str(e) + ")"
-                        
-        except BaseException as e:
+        # Minimal sanity-check.
+        if len(request) > 6:
+            statuscode = 0
+            statustext = ''
+            method = ''
+            resource = ''
             response = ''
-            statuscode = 500
-            statustext = "Internal Server Error (" + str(e) + ")"
+            
+            try:        
+                # Extract method and the resource requested from the request. 
+                method = request[2:request.find(' ')]
+                request = request[len(method) + 3:]
                 
-        finally:
-            logger.write(addr[0] + " " + method + " \"" + resource + (("?" + paramstr) if paramstr != "" else "") + "\" " + str(statuscode) + " " + statustext + ((" (" + str(len(response)) + " bytes of " + contenttype + ")") if (response != '') else '')) 
-            cl.sendall("HTTP/1.0 " + str(statuscode) + " " + statustext)
-            
-            if (response != ''):
-                cl.sendall("\r\nContent-Length: " + str(len(response)) + "\r\nContent-Type: " + contenttype + "\r\n")
-            
-            cl.sendall("\r\n")
+                resource = request[1:request.find(' ')]
+                request = request[len(resource) + 3:]
                 
-            if method!="HEAD": # The server MUST NOT return a content-body
-                cl.sendall(response)
+                # Separate query parameters.
+                i = resource.find('?')
+                if i != -1:
+                    paramstr = resource[i+1:]
+                    resource = resource[0:i]                
+                else:
+                    paramstr = ''
+                
+                # Parse query parameters into a dictionary by name and value.
+                params = {}
+                for p in paramstr.split('&'):
+                    i = p.find('=')
+                    if i == -1:
+                        name = p
+                        value = ''
+                    else:
+                        name = p[0:i]
+                        value = p[i+1:]
             
-            cl.close()
-            logger.write('Connection closed')
-            
-            onboard.off()
-    else:
-        cl.close()
-        logger.write('Mutilated request')
+                    params[name] = value
         
+                # Default to index page.
+                if (resource == ''):
+                    resource = 'index.html'
+            
+                # Determine content-type by file extension.
+                ext = resource[resource.find('.'):]
+                if ext == '.html':
+                    contenttype = 'text/html'
+                elif ext == '.ico':
+                    contenttype = 'image/x-icon'
+                elif ext == '.png':
+                    contenttype = 'image/png'                
+                elif ext == '.jpg':
+                    contenttype = 'image/jpeg'
+                elif ext == '.svg':
+                    contenttype = 'image/svg+xml'
+                elif ext == '.xml':
+                    contenttype = 'application/xml'
+                elif ext == '.js':
+                    contenttype = 'text/javascript'
+                else:
+                    contenttype = 'application/octet-stream'
+        
+                # This server either serves static resource on GET requests OR
+                # answers with (minimal) dynamic content to POST requests.
+
+                if (method == 'GET') or (method == 'HEAD'):        
+                    # Load the resource.
+                    with open('/www/' + resource, 'rb') as file:
+                        response = file.read()
+    
+                    statuscode = 200
+                    statustext = 'OK'
+            
+                elif method == 'POST':
+                    
+                    if resource == 'set':
+                        # Disable animation on the pixels. And indicate beginning of an update.
+                        doorsign.setManualControl(True)
+                        doorsign.beginUpdate()
+                        try:                    
+                            for pixelIndex in range(doorsign.pixelCount):
+                                pixel = (
+                                    int(params.get('r' + str(i), 0)),
+                                    int(params.get('g' + str(i), 0)),
+                                    int(params.get('b' + str(i), 0)),
+                                )
+                                doorsign.setPixel(pixelIndex, pixel)
+                        finally:
+                            # End pixel update phase. This will send the data out to the LEDs.
+                            doorsign.endUpdate()                    
+
+                        # No interesting response. Just keep AJAXers happy.    
+                        response = '{}'
+                        contenttype = 'application/json'
+            
+                        statuscode = 200
+                        statustext = 'OK'            
+                    else:
+                        # Unsupported endpoint
+                        statuscode = 404
+                        statustext = 'Not Found (Endpoint \"' + resource + '\")' 
+                else:
+                    raise RuntimeError('Unsupported http-method: \"' + method + '\"')
+                                                    
+            except OSError as e:
+                    
+                if e.errno == errno.ENOENT:
+                    response = ''
+                    statuscode = 404
+                    statustext = 'Not Found'
+                else:
+                    response = ''        
+                    statuscode = 500
+                    statustext = 'Internal Server Error (' + str(e) + ')'
+                            
+            except BaseException as e:
+                response = ''
+                statuscode = 500
+                statustext = 'Internal Server Error (' + str(e) + '')'
+                    
+            finally:
+                logger.write(addr[0] + ' ' + method + ' \"' + resource + (('?' + paramstr) if paramstr else '') + '\" ' + str(statuscode) + ' ' + statustext + ((' (' + str(len(response)) + ' bytes of ' + contenttype + ')') if response else '')) 
+                cl.sendall('HTTP/1.0 ' + str(statuscode) + ' ' + statustext)
+                
+                if response:
+                    cl.sendall('\r\nContent-Length: ' + str(len(response)) + '\r\nContent-Type: ' + contenttype + '\r\n')
+                
+                cl.sendall('\r\n')
+                    
+                if response and (method != 'HEAD'): # HEAD: The server MUST NOT return a content-body
+                    cl.sendall(response)
+                
+                cl.close()
+                logger.write('Connection closed')
+        else:
+            cl.close()
+            logger.write('Mutilated request')
+
+    finally:
+        onboard.off()
+
     # End of handleHttp()
 
 def task():
+
     global myIP
     
+    register_thread_name('NET')
     logger.write('Network task starting')
-    
     onboard.on()
 
+    rp2.country('DE')
+
+    # Load configuration
     with open('config.json') as fp:
         config = ujson.load(fp)
     
@@ -272,12 +342,14 @@ def task():
                 password = config['AP']['pw']
         )
     else:
-        fatalConnectionError(3, 'Configuration error: Neither STA nor AP defined in config')        
-
+        onboard.off()
+        logger.write('Neither STA nor AP defined in config. Network is done.')
+        return
+        
     wlan.active(True)
-    
+
     # logger.write(str(wlan.scan()))
-    
+        
     # Disable power-saving because this is a server
     wlan.config(pm = 0xa11140)
 
@@ -288,8 +360,12 @@ def task():
     # logger.write(wlan.config('essid'))
     # logger.write(wlan.config('txpower'))
 
+    if wlan.isconnected():
+        logger.write('Disconnecting from stale connection')
+        time.sleep(2)
+    
     if 'STA' in config:
-        logger.write('Connecting to: ' + config['STA']['ssid'] + (" /w password" if config['STA']['pw'] else ""))
+        logger.write('Connecting to: ' + config['STA']['ssid'] + (' /w password' if config['STA']['pw'] else ''))
 
         wlan.connect(config['STA']['ssid'], config['STA']['pw'])
 
@@ -321,59 +397,63 @@ def task():
             logger.write('Connected')
             
     else:
-        # Immediately ready as AP. Indicate by turning off onboard-LED
+        # Immediately ready as AP. Indicate by turning off onboard-LED.
         onboard.off()
 
-    # Where am I?
-    myIP = wlan.ifconfig()[0]
-    logger.write('IP = ' + myIP)
-    
-    inputsockets = []
-    
-    http = None
-    dns = None
-    dhcp = None
-    
-    if 'AP' in config:
-        # DNS server socket for captive portal
-        addr = socket.getaddrinfo('0.0.0.0', 53, 0, socket.SOCK_DGRAM)[0][-1]
-
-        dns = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        dns.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        dns.setblocking(False)
-    
-        dns.bind(addr)
+    try:
+        # Where am I?
+        myIP = wlan.ifconfig()[0]
+        logger.write('IP = ' + myIP)
         
-        inputsockets.append(dns)
-
-        logger.write('DNS server listening on ' + str(addr))
+        inputsockets = []
         
-    # HTTP server socket
-    addr = socket.getaddrinfo('0.0.0.0', 80)[0][-1]
-
-    http = socket.socket()
-    http.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-    http.bind(addr)
-    http.listen(1)
-
-    inputsockets.append(http)
-
-    logger.write('Http server listening on ' + str(addr))
-    
-    # Wait for connections
-    while True:
-        # handleHttp()
-        readable, writeable, errored = select.select(inputsockets, [], [], 1)
+        http = None
+        dns = None
         
-        for s in readable:
-            if (s is http):
-                handleHttp(s)
-            elif (s is dns):
-                handleDNS(s)
-            else:
-                raise RuntimeError('select() returned unknown readable socket')    
+        if 'AP' in config:
+            # Set up DNS server socket for captive portal.
+            addr = socket.getaddrinfo('0.0.0.0', 53, 0, socket.SOCK_DGRAM)[0][-1]
+
+            dns = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+            dns.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            dns.setblocking(False)
+        
+            dns.bind(addr)
             
-if __name__ == "__main__":
-    logger.write("Running stand-alone task()")
+            inputsockets.append(dns)
+
+            logger.write('DNS server listening on ' + str(addr))
+            
+        # Set up HTTP server socket.
+        addr = socket.getaddrinfo('0.0.0.0', 80)[0][-1]
+
+        http = socket.socket()
+        http.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        http.bind(addr)
+        http.listen(1)
+
+        inputsockets.append(http)
+
+        logger.write('Http server listening on ' + str(addr))
+        
+        # Wait for connections.
+        while True:
+            readable, writeable, errored = select.select(inputsockets, [], [], 1)
+            
+            for s in readable:
+                if (s is http):
+                    handleHttp(s)
+                elif (s is dns):
+                    handleDNS(s)
+                else:
+                    raise RuntimeError('select() returned unknown readable socket')    
+    finally:
+        if wlan.isconnected():
+            logger.write('Disconnecting')
+            time.sleep(2)
+
+if __name__ == '__main__':
+
+    logger.write('Running stand-alone task()')
     task()
-    logger.write("task() exited")
+    logger.write('task() exited')

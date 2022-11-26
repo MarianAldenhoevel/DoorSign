@@ -1,12 +1,15 @@
-import sys
-import time
-import doorsign
-import logger
-import program
-import math
-import random
+'''
+This animation turns on a single white LED for a short interval for a twinkling effect
+'''
 
 enabled = True
+
+import time
+import math
+import random
+import doorsign
+import logger
+import animation
 
 lastframe_ms = None
 pixels = None
@@ -14,11 +17,11 @@ pixels = None
 blendstart_ms = None
 blend_ms = 1000
 
-def update(frame_ms):
+def update(frame_ms, first_frame = False):
     global lastframe_ms
     global pixels
     
-    if (lastframe_ms == None):        
+    if first_frame or (lastframe_ms == None):        
         # First frame. Initialize to all black
         pixels = [[0,0,0]] * doorsign.pixelCount
         offtimes_ms = [0] * doorsign.pixelCount
@@ -43,7 +46,7 @@ def update(frame_ms):
     
     return pixels
 
-if __name__ == "__main__":
+if __name__ == '__main__':
    
-   program.sample(update)
+   animation.sample(update)
    
