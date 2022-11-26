@@ -271,9 +271,15 @@ def handleHttp(socket):
                 if (method == 'GET') or (method == 'HEAD'):        
                     
                     if (resource == 'api'):
-                        # Return sensor data and LED status
+                        # Return sensor data and LED status.
                         response = ujson.dumps(apiData())
                         contenttype = 'application/json'            
+                    
+                    elif (resource == 'animations'):
+                        # Return the list of enabled animation modules.
+                        response = [a.__name__ for a in core1.animations]
+                        contenttype = 'application/json'            
+                    
                     else:   
                     # Load a static resource.
                         with open('/www/' + resource, 'rb') as file:
@@ -284,7 +290,25 @@ def handleHttp(socket):
             
                 elif method == 'POST':
                     
-                    if resource == 'api':
+                    if resource == 'nextanim':
+                        
+                        
+                        # Build response                                 
+                        response = ujson.dumps(apiData())
+                        
+                        # End pixel update phase. This will send the data out to the LEDs.
+                        doorsign.endUpdate()                    
+
+                        contenttype = 'application/json'            
+                        statuscode = 200
+                        statustext = 'OK'
+                        
+                    if resource == 'nextanimation'
+                        # Request core0 to switch to a new animation. Pass in the name of the
+                        # next animation module or leave empty for a random next animation.
+                        core1.request_next_animation = params.get('name', '')
+                        
+                    elif resource == 'api':
                         # Read each pixel and update if there is data for that channel.
                         hasChannelData = False
                         doorsign.beginUpdate()
@@ -316,11 +340,11 @@ def handleHttp(socket):
                             if hasChannelData:
                                 doorsign.setManualControl(True)
                         
-                            # Build response                                 
-                            response = ujson.dumps(apiData())
-                            
-                            # End pixel update phase. This will send the data out to the LEDs.
-                            doorsign.endUpdate()                    
+                        # Build response                                 
+                        response = ujson.dumps(apiData())
+                        
+                        # End pixel update phase. This will send the data out to the LEDs.
+                        doorsign.endUpdate()                    
 
                         contenttype = 'application/json'            
                         statuscode = 200

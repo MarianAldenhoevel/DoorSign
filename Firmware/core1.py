@@ -16,6 +16,10 @@ Care is taken that all enabled animations are used and never back-to-back.
 animation_switch_interval_ms = 30000 # Time in ms before animations are switched-
 animation_blend_ms = 5000 # Blend time between animations.
 
+# Set to empty string to request a random next animation to start at the next
+# possible moment or set to the name of an animation to run next.
+request_next_animation = None 
+
 final_dimmer = 0.2
 
 import machine
@@ -49,7 +53,8 @@ def setup():
         logger.write('Available animations: ' + ', '.join(animation.__name__ for animation in animations))
     
 def task():
-
+    global request_next_animation
+    
     logger.register_thread_name('ANIM')
     watchdog.feed() # First feed to make us known to the WDT
     logger.write('Animation task starting')
@@ -84,13 +89,50 @@ def task():
     '''
     while True:
         watchdog.feed()
-            
+
         frame_ms = time.ticks_ms()
         
         if (active_animation):
             # Get the pixels for the active animation.
             active_pixels = active_animation.update(frame_ms)
+
+            if request_next_animation != None:
+                candidate_animation = None
+                
+                if request_next_animation = '':
+                    # Pick a next animation to execute. Brutally sample until we do not 
+                    # get the same as the active one.           
+                    while True:
+                        candidate_animation = random.choice(new_animations)                                                
+                        if next_animation is not active_animation:
+                            break
+                else:
+                    # Pick the next animation by name
+                    request_next_animation = request_next_animation.upper()
+                    for animation in animations:
+                        if animation.__name__.upper() == request_next_animation:
+                            candidate_animation = animation
+                            break
+                    
+                # If we found and selected the next animation update the lists
+                # and start it now.
+                if candidate_animation:
+                    next_animation = candidate_animation
+                    new_animations.remove(next_animation)
+                    old_animations.append(next_animation)    
+                    if len(new_animations) == 0:
+                        new_animations = old_animations
+                        old_animations = []
+                    next_animation_start_ms = frame_ms
+                    doorsign.setManualControl(False)
             
+                    logger.write('Next animation: ' + next_animation.__name__)
+                else:
+                    logger.write('Could not honour request for ' + ('random ' if request_next_animation == '' else '') + 'next animation ' + request_next_animation)
+                    
+                # Reset request for next animation.
+                request_next_animation = None        
+                
             # Are we running a next animation?
             if (next_animation):
                 # Yes. Get their pixels.

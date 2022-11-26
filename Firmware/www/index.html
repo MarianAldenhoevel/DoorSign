@@ -60,8 +60,12 @@
             
         <h1>Heinrichsweg 9</h1>
         <div id="buttons">
-            <button id="animation_run">Run Animation</button>
-            <button id="animation_stop">Stop Animation</button>
+            <button id="random_animation">Random animation</button>
+            <button id="animation_run">Run animation</button>
+            <button id="animation_stop">Stop animation</button>
+            <ul id='animations'>
+                <a href="#'>twinkle</a>
+            </ul>
         </div>
         <div class="led" id="led0"">
             <div class="led-outer"><div class="led-center"><div class="led-inner">
@@ -228,8 +232,9 @@
             }
 
             // Wire controls.
-            $("#animation_run").click(function() { url = "/api?manual=0"; $.post(url) }); 
+            $("#animation_run").click(function() { url = "/api?nextanimation"; $.post(url) }); 
             $("#animation_stop").click(function() { url = "/api?manual=1"; $.post(url) }); 
+            $("#random_animation").click(function() { url = "/api?manual=1"; $.post(url) }); 
             $("input[type=range]").on("input", function() {
                 ledindex = $(this).parents(".led").attr("id").substring(3);
                 console.log("changing led #" + ledindex);
@@ -268,6 +273,22 @@
             
                 clearTimeout(inflight)
                 inflight = setTimeout(postLEDs, 100);
+            });
+
+            // Fetch list of available animations and populate list.
+            $.get("/animations", function(animations) {
+                console.log(data);
+                for (var i = 0; i < len(animations); i++) {
+                    a = $("<a href=\"#\" class=\"animation\" id=\" + animations[i] + "\">" + animations[i] + "</a>");
+                    $("#animations").append(a);
+                }
+                
+                $(".animation").click(function() {
+                    animation = $(this).attr("id");
+                    url = "/nextanimation?name=" + animation; 
+                    $.post(url);
+                }
+                
             });
 
             // Calculate initial HSV values.
