@@ -1,7 +1,8 @@
 {
     "STA": {
         "ssid": "Heinrichsweg 9",
-        "pw": "ZZkY23grMGpNLfP2"
+        "pw": "ZZkY23grMGpNLfP2",        
+        "ntpserver": "pool.ntp.org"
     },
     "_AP": {
         "essid": "Heinrichsweg 9 Doorsign",

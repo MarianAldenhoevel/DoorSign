@@ -21,7 +21,7 @@ import watchdog
 def Main():
     # Here we go!
     logger.write('Doorsign firmware 0.0')
-    logger.write('2022 marian.aldenhoevel@marian-aldenhoevel.de')
+    logger.write('<marian.aldenhoevel@marian-aldenhoevel.de>')
     logger.write('https://github.com/MarianAldenhoevel/DoorSign')
 
     # Turn on the onboard-LED to indicate we are on. The LED is later
@@ -57,7 +57,7 @@ def Main():
 
     # Give each task a chance to set up in a single threaded environment.
     core0.setup()
-    core1.setup()j
+    core1.setup()
 
     # Enable hardware watchdog timer.
     watchdog.enable()

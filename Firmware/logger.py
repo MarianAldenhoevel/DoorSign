@@ -3,7 +3,8 @@ A simplistic logging framework to replace print()-calls.
 
 It associated thread-IDs with readable names and synchronizes print()s
 '''
- 
+
+import time
 import _thread
 
 logger_lock = _thread.allocate_lock()
@@ -35,12 +36,17 @@ def get_thread_id():
     return id
 
 '''
-Synchronized print() decorated with the thread name/ID
+Synchronized print() decorated with the timestamp and thread name/ID
 '''
 def write(msg):
     logger_lock.acquire()
     try:
-        print('[' + get_thread_id() + '] ' + msg)
+        y, mo, d, h, mi, s, _, _ = time.gmtime()
+        print('{:04d}.{:02d}.{:02d} {:02d}:{:02d}:{:02d} [{:s}] {:s}'.format(
+              y, mo, d, h, mi, s,
+              get_thread_id(),
+              msg
+        ))
     finally:
         logger_lock.release()
         

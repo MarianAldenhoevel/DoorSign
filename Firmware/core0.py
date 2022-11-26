@@ -27,10 +27,12 @@ import ujson
 import logger
 import doorsign
 import watchdog
+import struct
 
 onboard = machine.Pin('LED', machine.Pin.OUT)
 myip = None
 config = None
+nextNTPSync = None
 
 def setup():
     global config
@@ -302,7 +304,7 @@ def handleHttp(socket):
                     statuscode = 500
                     statustext = 'Internal Server Error (' + str(e) + ')'
                             
-            except BaseException as e:
+            except Exception as e:
                 response = ''
                 statuscode = 500
                 statustext = 'Internal Server Error (' + str(e) + ')'
@@ -330,11 +332,76 @@ def handleHttp(socket):
 
     # End of handleHttp()
 
+def syncNTP():
+    global nextNTPSync
+    
+    # We can only query the NTP server if we are a WIFI client (STA)
+    # and a ntp host is configured. Otherwise this is a NOP.
+    if not (('STA' in config) and ('ntpserver' in config['STA'])):
+        return
+
+    logger.write('Syncing RTC with network time')
+        
+    '''
+    At its most basic, the NTP protocol is a clock request transaction, where a client requests the current time from a server,
+    passing its own time with the request. The server adds its time to the data packet and passes the packet back to the client.
+    When the client receives the packet, the client can derive two essential pieces of information: the reference time at the
+    server and the elapsed time, as measured by the local clock, for a signal to pass from the client to the server and back again.
+    Repeated iterations of this procedure allow the local client to remove the effects of network jitter and thereby gain a
+    stable value for the delay between the local clock and the reference clock standard at the server. This value can then be
+    used to adjust the local clock so that it is synchronized with the server. Further iterations of this protocol exchange
+    can allow the local client to continuously correct the local clock to address local clock skew.
+    
+    ...
+    
+    Nah, we'll just send an emtpy request and pick the time out of the respone. Fair?
+    '''
+    
+    ntpserver = config['STA']['ntpserver']
+    
+    NTP_DELTA = 2208988800
+    
+    request = bytearray(48)
+    request[0] = 0x1B
+    
+    onboard.on()
+            
+    addr = socket.getaddrinfo(ntpserver, 123)[0][-1]
+    ntp = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    try:
+        # Send request and read response.
+        ntp.sendto(request, addr)
+        response = ntp.recv(48)
+        
+        # Decode response from packet and decompose into a time tuple.
+        ntp_time = struct.unpack("!I", response[40:44])[0]        
+        tm = time.gmtime(ntp_time - NTP_DELTA)
+        
+        # Update RTC
+        rtc = machine.RTC()
+        rtc.datetime((tm[0], tm[1], tm[2], tm[6] + 1, tm[3], tm[4], tm[5], 0))
+
+        # Schedule the next sync in 24 hours.
+        nextNTPSync = time.ticks_add(time.ticks_ms(), 1000 * 60 * 60 * 24)
+        
+        logger.write('RTC synced with network time')
+    
+    except Exception as e:
+        logger.write('Error requesting network time from ' + ntpserver + ' (' + str(e) + ')')
+        
+        # Schedule the next sync using the RTC alarm.
+        nextNTPSync = time.ticks_add(time.ticks_ms(), 1000 * 60)
+        
+    finally:
+        onboard.off()
+        ntp.close()
+    
 def task():
 
     global myIP
+    global nextNTPSync
     
-    logger.register_thread_name('NET')
+    logger.register_thread_name('NET ')
     watchdog.feed() # First feed to make us known to the WDT
     logger.write('Network task starting')
     onboard.on()
@@ -374,9 +441,13 @@ def task():
 
     if wlan.isconnected():
         logger.write('Disconnecting from stale connection')
-        time.sleep(2)
-        watchdog.feed()
-    
+        wlan.disconnect()
+        timeout = 5
+        while (timeout > 0) and (wlan.isconnected()):
+            watchdog.feed()
+            timeout -= 1
+            time.sleep(1)
+        
     if 'STA' in config:
         logger.write('Connecting to: ' + config['STA']['ssid'] + (' /w password' if config['STA']['pw'] else ''))
 
@@ -409,6 +480,8 @@ def task():
         else:
             onboard.off()
             logger.write('Connected')
+            
+            syncNTP()
             
     else:
         # Immediately ready as AP. Indicate by turning off onboard-LED.
@@ -452,10 +525,10 @@ def task():
         
         # Main loop: Wait for connections and service them.
         while True:
-            
-            # "http://worldtimeapi.org/api/timezone/Etc/UTC"
-            
             watchdog.feed()
+
+            if nextNTPSync and (time.ticks_diff(nextNTPSync, time.ticks_ms())) <= 0:
+                syncNTP()
             
             readable, writeable, errored = select.select(inputsockets, [], [], 1)
             
@@ -469,8 +542,13 @@ def task():
     finally:
         if wlan.isconnected():
             logger.write('Disconnecting')
-            time.sleep(2)
-
+            wlan.disconnect()
+            timeout = 5
+            while (timeout > 0) and (wlan.isconnected()):
+                watchdog.feed()
+                timeout -= 1
+                time.sleep(1)
+            
 if __name__ == '__main__':
 
     logger.write('Running stand-alone task()')
