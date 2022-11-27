@@ -13,7 +13,7 @@
             }
 
             .panel {
-                width: 20em;
+                width: 22em;
                 margin: 0.5em;
             }
 
@@ -85,7 +85,7 @@
 
             button {
                 margin: 0.2em;
-                min-width: 7.5em;
+                min-width: 9em;
             }
 
             #buttons .separator {
@@ -105,9 +105,8 @@
                     <button id="btnReset">Reset</button><button id="btnOff">Lights off</button><button id="btnAuto">Auto</button><button id="btnManual">Manual</button><button id="btnRead">Read</button>
                     <div id="animations" style="display: none;">
                         <div class="separator"></div>
-                        <span>Play animation:</span>
-                        <div><button id="" class="animation" style="display: none;">pick random</random></button></div>
-                    </div>
+                        <span>Play animation:</span><br/>
+                        <button id="" class="animation" style="display: none;">pick random</button></div>                    
                 </div></div></div>
             </div>
             <div class="panel led" id="led_template" style="display: none;">
@@ -215,8 +214,7 @@
         }
 
         function update_ui() {
-            console.log("update_ui()");
-
+            
             var ledcount = rgb.length;
             for (var ledindex = 0; ledindex < ledcount; ledindex++) { 
                 leddiv = $("#led" + ledindex);
@@ -305,8 +303,7 @@
             
             $("input[type=range]").on("input", function() {
                 ledindex = $(this).parents(".led").attr("id").substring(3);
-                console.log("changing led #" + ledindex);
-
+                
                 switch ($(this).attr("id") ) {
                     case "slider_r":
                         rgb[ledindex][0] = $(this).val();
@@ -333,7 +330,6 @@
                         hsv_to_rgb();
                         break;
                     default:
-                        console.log("unhandled " + $(this).attr("id"));
                         break;
                 }
                 
@@ -345,19 +341,19 @@
 
             // Fetch list of available animations and populate list.
             $.get("/api", function(apidata) {
-                // console.log(animations);
                 for (var i = 0; i < apidata.animations.length; i++) {
-                    btn = $("<button class=\"animation\" id=\"" + apidata.animations[i] + "\">" + apidata.animations[i] + "</buttton>");
+                    animname = apidata.animations[i];
+                    btn = $("<button class=\"animation\" id=\"" + animname + "\">" + (animname.replace(/^(animation_)/,"")) + "</buttton>");
                     $("#animations").append(btn);
                     btn.fadeIn("slow");
 
-                    // Also fade in the whole section for the very first button.
+                    // Also fade in the whole section and the random-button.
                     $("#animations").fadeIn("fast");
+                    $("button.animation").fadeIn("fast");
                 }
                 
                 // Wire new links to trigger an AJAX call to switch animation.
                 $("button.animation").on("click", function() {
-                    console.log('click');
                     animation = $(this).attr("id");
                     url = "/animation?name=" + animation; 
                     $.post(url);

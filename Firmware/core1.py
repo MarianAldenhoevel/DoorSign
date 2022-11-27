@@ -31,6 +31,7 @@ import os
 import watchdog
 
 animations = []
+active_animation = None
 
 '''
 Set up the animations by dynamically loading modules according to a naming convention
@@ -53,8 +54,9 @@ def setup():
         logger.write('Available animations: ' + ', '.join(animation.__name__ for animation in animations))
     
 def task():
+    global active_animation
     global request_animation
-    
+     
     logger.register_thread_name('ANIM')
     watchdog.feed() # First feed to make us known to the WDT
     logger.write('Animation task starting')
@@ -70,7 +72,12 @@ def task():
     # Randomly pick the first animation to execute. We are guaranteed to have one 
     # because we returned if we didn't.
     if len(animations) > 0:
-        active_animation = random.choice(new_animations)
+        doorsign.beginUpdate()
+        try:
+            active_animation = random.choice(new_animations)
+        finally:
+            doorsign.endUpdate()
+            
         new_animations.remove(active_animation)
         old_animations.append(active_animation)
         if len(new_animations) == 0:
@@ -120,7 +127,12 @@ def task():
                 # If we picked or found the new animation now update the lists and start
                 # it immediately without a blend.
                 if candidate_animation:
-                    active_animation = candidate_animation
+                    doorsign.beginUpdate()
+                    try:
+                        active_animation = candidate_animation
+                    finally:
+                        doorsign.endUpdate()
+                        
                     active_animation_start_ms = frame_ms
                     next_animation = None
                     
@@ -154,7 +166,12 @@ def task():
                 if (blend >= 1.0):
                     # Finished blend. Swap animations, we will only be running the next
                     # animation as active now.
-                    active_animation = next_animation
+                    doorsign.beginUpdate()
+                    try:
+                        active_animation = next_animation
+                    finally:
+                        doorsign.endUpdate()
+                        
                     active_animation_start_ms = frame_ms
                     next_animation = None
 

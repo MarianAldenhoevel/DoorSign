@@ -32,8 +32,16 @@ def Main():
     # Turn off all neopixels in case the are left on from an old run.
     doorsign.off()
 
-    logger.write('os.uname() = ' + str(os.uname()))
-
+    logger.write('os.uname(): ' + str(os.uname()))
+    
+    v = os.statvfs('/')
+    size_bytes = v[1]*v[2]
+    free_bytes = v[0]*v[3]
+    inodes = v[5]
+    free_inodes = v[6]
+    
+    logger.write('os.statvsf(): {} bytes, {} free, {} inodes, {} free'.format(size_bytes, free_bytes, inodes, free_inodes)) 
+    
     # Report on what we think caused us to lose consciousness last.
     mrc = machine.reset_cause()
     if mrc == machine.PWRON_RESET:
@@ -63,7 +71,7 @@ def Main():
     core1.setup()
 
     # Enable hardware watchdog timer.
-    #watchdog.enable()
+    watchdog.enable()
 
     # Start both threads.
     _thread.start_new_thread(core1.task, ()) # NO braces after core1.task, we are passing the function...

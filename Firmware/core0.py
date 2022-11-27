@@ -184,14 +184,42 @@ def apiData():
     
     doorsign.beginUpdate()
     try:
+        v = os.statvfs('/')
+        size_bytes = v[1]*v[2]
+        free_bytes = v[0]*v[3]
+        inodes = v[5]
+        free_inodes = v[6]
+        
         result['manual_control'] = doorsign.manual_control
         result['pixels'] = [{'R': p[0], 'G': p[1], 'B': p[2]} for p in doorsign.getPixels()]            
         result['adc'] = [doorsign.adc[i].read_u16() for i in range(3)]
         result['animations'] = [a.__name__ for a in core1.animations]
+        result['active_animation'] = (core1.active_animation.__name__ if core1.active_animation else None);
+        result['size_bytes'] = size_bytes
+        result['free_bytes'] = free_bytes
+        result['inodes'] = inodes
+        result['free_inodes'] = free_inodes
     finally:
         doorsign.endUpdate()
     
     return result
+
+def extractHeader(data, header):
+    search = b'\r\n' + header + b': '
+    headerpos = data.find(search)
+
+    if headerpos == -1:
+        return None
+    else:
+        data = data[headerpos + len(search):]
+        
+        endpos = data.find(b'\r\n')
+        if endpos == -1:
+            value = data.decode()
+        else:    
+            value = data[:endpos].decode()
+   
+        return value    
 
 '''
 This function implements the complete handling of a http request.
@@ -202,31 +230,37 @@ def handleHttp(socket):
         cl, addr = socket.accept()    
         logger.write('Client connected from '+ str(addr))
         
-        request = str(cl.recv(1024)) # Only read this much data. We don't care if they send any more.
-        # print(request)
-    
+        cl.settimeout(10)
+        request_data = cl.recv(1024) # Only read this much data. We don't care if they send any more.
+        
         # Minimal sanity-check.
-        if len(request) > 6:
+        if len(request_data) > 6:
             statuscode = 0
-            statustext = ''
-            method = ''
-            resource = ''
-            response = ''
+            statustext = None
+            method = None
+            resource = None
+            response = None
             responsefilesize = None 
 
-            try:        
+            try:
+                # Split the request into headers and body.
+                separator = b'\r\n\r\n'
+                separator_pos = request_data.find(separator)
+                request_header = request_data[:separator_pos]
+                request_body = request_data[separator_pos + len(separator):]
+                                
                 # Extract method and the resource requested from the request. 
-                method = request[2:request.find(' ')]
-                request = request[len(method) + 3:]
-                
-                resource = request[1:request.find(' ')]
-                request = request[len(resource) + 3:]
+                method = request_header[:request_header.find(b' ')].decode()
+                request_header = request_header[len(method) + 1:]
+
+                resource = request_header[:request_header.find(b' ')].decode()
+                request_header = request_header[len(resource) + 1:]
                 
                 # Separate query parameters.
-                i = resource.find('?')
+                i = resource.find('?')                
                 if i != -1:
                     paramstr = resource[i+1:]
-                    resource = resource[0:i]                
+                    resource = resource[0:i]
                 else:
                     paramstr = ''
                             
@@ -244,7 +278,7 @@ def handleHttp(socket):
                     params[name] = value
         
                 # Default to index page.
-                if (resource == ''):
+                if (resource == '') or (resource == '/'):
                     resource = 'index.html'
 
                 # Determine content-type by file extension.
@@ -270,17 +304,29 @@ def handleHttp(socket):
                     # GET or HEAD: First test for the special endpoints that implement the
                     # API. If no match assume it is for static content.  
 
-                    if (resource == 'api'):
+                    if resource == '/api':
                         # Return sensor data and LED status.
                         response = ujson.dumps(apiData())
                         contenttype = 'application/json'            
-                    
+                        
+                    elif resource.endswith('/'):
+                        # List directory.
+                        response = ujson.dumps(os.listdir('/www/' + resource))
+                        contenttype = 'application/json'
+                        
                     else:   
                         # Static resource. Just read the size here. We will open and send the file
                         # later in chunks to support large content. If the file does not exist
-                        # this will also throw the exception we want to catch to produce a 404.
+                        # this will also raise the exception we want to catch to produce a 404.
                         responsefilesize = os.stat('/www/' + resource)[6]
                             
+                    statuscode = 200
+                    statustext = 'OK'
+            
+                elif method == 'DELETE':
+                    # DELETE: Just attempt it and face the consequences.
+                    os.remove(resource)
+                    
                     statuscode = 200
                     statustext = 'OK'
             
@@ -288,12 +334,12 @@ def handleHttp(socket):
                     # POST: Test for special api endpoints. If no match treat as file upload
                     # for a poor man's OTA update.
                     
-                    if resource == 'reset':
+                    if resource == '/reset':
                         # Well. This will not even produce a http result, just hit itself 
                         # over the head with a hammer right now.
                         machine.reset()
 
-                    elif resource == 'animation':
+                    elif resource == '/animation':
                         # Request core0 to switch to a new animation. Pass in the name of the
                         # next animation module or leave empty for a random next animation.
                         core1.request_animation = params.get('name', '')
@@ -305,7 +351,7 @@ def handleHttp(socket):
                         statuscode = 200
                         statustext = 'OK'
                         
-                    elif resource == 'api':
+                    elif resource == '/api':
                         # Read each pixel and update if there is data for that channel.
                         hasChannelData = False
                         doorsign.beginUpdate()
@@ -350,9 +396,26 @@ def handleHttp(socket):
                         # Not a special endpoint. Treat as file upload. We use raw data upload so
                         # the filename is simply the resource POSTed to and the data is the whole
                         # body of the request.
-                        payload = request[request.find('\r\n\r\n'):]
-                        statuscode = 404
-                        statustext = 'Not Found (Endpoint \"' + resource + '\")' 
+                        
+                        contentlength = int(extractHeader(request_header, b'Content-Length'))
+                        
+                        written = 0
+                        with open(resource, "wb") as dest:                            
+                            # We have only received the start of the data when we looked at the
+                            # request. Save and read and save and read the rest...
+                            while True:
+                                dest.write(request_body)
+
+                                written += len(request_body)
+                                if written >= contentlength:
+                                    break
+                            
+                                request_body = cl.recv(2048)
+                                if not request_body:
+                                    time.sleep(0.1)
+                            
+                        statuscode = 200
+                        statustext = 'OK (' + str(written) + ' bytes written to \"' + resource + '\")' 
                 else:
                     raise RuntimeError('Unsupported http-method: \"' + method + '\"')
                                                     
@@ -363,6 +426,10 @@ def handleHttp(socket):
                     statuscode = 404
                     statustext = 'Not Found'
                 else:
+                    if e.errno == 28:
+                        # Not in error codes?
+                        e = 'No space left on device'
+                        
                     response = ''        
                     statuscode = 500
                     statustext = 'Internal Server Error (' + str(e) + ')'
@@ -371,7 +438,7 @@ def handleHttp(socket):
                 response = ''
                 statuscode = 500
                 statustext = 'Internal Server Error (' + str(e) + ')'
-                    
+                
             finally:
                 # At this point we have collected everything we need to produce the response to the client.
 
@@ -388,6 +455,7 @@ def handleHttp(socket):
                 logger.write(addr[0] + ' ' + method + ' \"' + resource + (('?' + paramstr) if paramstr else '') + '\" ' + str(statuscode) + ' ' + statustext + ((' (' + str(contentlength) + ' bytes of ' + contenttype + ')') if contentlength else '')) 
                 
                 # Send http header with status.
+                time.sleep(5)
                 cl.sendall('HTTP/1.0 ' + str(statuscode) + ' ' + statustext)
                 
                 if contentlength:
