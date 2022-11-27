@@ -185,9 +185,9 @@ def apiData():
     doorsign.beginUpdate()
     try:
         result['manual_control'] = doorsign.manual_control
-        result['pixels'] =	doorsign.getPixels()            
-        for adcIndex in range(3):
-            result['adc' + str(adcIndex)] = doorsign.adc[adcIndex].read_u16()     
+        result['pixels'] = [{'R': p[0], 'G': p[1], 'B': p[2]} for p in doorsign.getPixels()]            
+        result['adc'] = [doorsign.adc[i].read_u16() for i in range(3)]
+        result['animations'] = [a.__name__ for a in core1.animations]
     finally:
         doorsign.endUpdate()
     
@@ -273,11 +273,6 @@ def handleHttp(socket):
                     if (resource == 'api'):
                         # Return sensor data and LED status.
                         response = ujson.dumps(apiData())
-                        contenttype = 'application/json'            
-                    
-                    elif (resource == 'animations'):
-                        # Return the list of enabled animation modules.
-                        response = ujson.dumps([a.__name__ for a in core1.animations])
                         contenttype = 'application/json'            
                     
                     else:   

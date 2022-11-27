@@ -1,1 +1,0 @@
-curl --verbose -X POST -H "Content-Type: application/octet-stream" --data-binary "@test-upload.data" localhost

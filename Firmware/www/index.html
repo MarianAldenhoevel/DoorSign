@@ -1,105 +1,149 @@
+<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE html>
 <html>
     <head>
+        <meta charset="utf-8">
         <!-- <script src="https://code.jquery.com/jquery-3.6.1.min.js"></script> -->
         <script src="jquery-3.6.1.min.js"></script>
         <style>
-            .led {
+            * {
+                background-color: black;
+                color: white;
+                font-family: monospace;
+            }
+
+            .panel {
                 width: 20em;
-                margin-bottom: 1em;
+                margin: 0.5em;
             }
 
-            .led-outer {
-                border: 1px solid black;
+            .panel-outer {
+                border: 1px solid white;
             }
 
-            .led-center {
-                border: 5px solid blue;
+            .panel-center {
+                border: 5px solid gray;
             }
 
-            .led-inner {
-                border: 1px solid black;
+            .panel-inner {
+                border: 1px solid white;
                 padding: 0.5em;
+            }
+
+            #panel-container > .panel {
+                float: left;
+            }
+
+            .led-grid {
+                display: grid;
+                grid-template-columns: 2em auto 2em;
+                grid-template-rows: auto;
+                grid-template-areas: 
+                    "header header header"
+                    
+                    "ch0_name ch0_range ch0_value"
+                    "ch1_name ch1_range ch1_value"
+                    "ch2_name ch2_range ch2_value"
+                    
+                    "separator separator separator"
+
+                    "ch3_name ch3_range ch3_value"
+                    "ch4_name ch4_range ch4_value"
+                    "ch5_name ch5_range ch5_value"
+                    
+                    "footer footer footer";
             }
 
             .led-index {
                 text-align: center;
-                margin-bottom: 0.5em;
             }
 
-            .led-inner div label {
-                text-align: right;
-                min-width: 1em;
-                float: left;
+            .led-grid div { 
+                justify-self: center;
+                align-self: center;
             }
-
-            .led-inner div.range {
-                width: 20em;    
-            }   
-
-            .led-inner span.value {
-                width: 4em;
-                text-align: right;
-            }
-
-            #swatch {
-                background-color: blue;
-            }
-
-            #rgbHex {
-                text-align: center;
+        
+            .led-grid div.separator {
+                border-top: 1px solid white;
+                justify-self: stretch;
+                align-self: stretch;
+                height: 1em;
                 margin-top: 0.5em;
             }
 
-            #buttons {
-                margin-bottom: 1em;
+            input[type="range"] {
+                width: 100%
+            }
+
+            label {
+                text-align: center;
+            }
+
+            .rgb-hex {
+                text-align: center;
+            }
+
+            button {
+                margin: 0.2em;
+                min-width: 7.5em;
+            }
+
+            #buttons .separator {
+                border-top: 1px solid white;
+                height: 0.5em;
+                margin-top: 0.5em;
             }
 
             </style>
         </head>
     <body>
             
-        <h1>Heinrichsweg 9</h1>
-        <div id="buttons">
-            <button id="btnReset">Reset</button>
-            <button id="btnOff">Lights off</button>
-            <button id="btnAuto">Auto</button>
-            <button id="btnManual">Manual</button>
-            <ul id='animations'>
-                <li><a href="#" id="" class="animation">random</a></li>
-            </ul>
+        <h1>Heinrichsweg 9 - Türschild Kontrollzentrum</h1>
+        <div id="panel-container">
+            <div id="buttons" class="panel">
+                <div class="panel-outer"><div class="panel-center"><div class="panel-inner">
+                    <button id="btnReset">Reset</button><button id="btnOff">Lights off</button><button id="btnAuto">Auto</button><button id="btnManual">Manual</button><button id="btnRead">Read</button>
+                    <div id="animations" style="display: none;">
+                        <div class="separator"></div>
+                        <span>Play animation:</span>
+                        <div><button id="" class="animation" style="display: none;">pick random</random></button></div>
+                    </div>
+                </div></div></div>
+            </div>
+            <div class="panel led" id="led_template" style="display: none;">
+                <div class="panel-outer"><div class="panel-center"><div class="panel-inner led-grid">
+                    <div class="led-index" style="grid-area: header;">#0</div>
+                    
+                    <div style="grid-area: ch0_name;" class="name"><label for="slider_r">R</label></div>
+                    <div style="grid-area: ch0_range;" class="range"><input type="range" min="0" max="255" value="0" class="slider" id="slider_r"></div>
+                    <div style="grid-area: ch0_value;" class="value"><label for="slider_r" id="value_r"></label></div>
+                    
+                    <div style="grid-area: ch1_name;"><label for="slider_g">G</label></div>
+                    <div style="grid-area: ch1_range;"><input type="range" min="0" max="255" value="0" class="slider" id="slider_g"></div>
+                    <div style="grid-area: ch1_value;"><label for="slider_g" id="value_g"></label></div>
+                    
+                    <div style="grid-area: ch2_name;"><label for="slider_b">G</label></div>
+                    <div style="grid-area: ch2_range;"><input type="range" min="0" max="255" value="0" class="slider" id="slider_b"></div>
+                    <div style="grid-area: ch2_value;"><label for="slider_b" id="value_b"></label></div>
+                    
+                    <div class="separator" style="grid-area: separator;">&nbsp;</div>
+                    
+                    <div style="grid-area: ch3_name;"><label for="slider_h">H</label></div>
+                    <div style="grid-area: ch3_range;"><input type="range" min="0" max="360 " value="0" class="slider" id="slider_h"></div>
+                    <div style="grid-area: ch3_value;"><label for="slider_h" id="value_h"></label></div>
+                    
+                    <div style="grid-area: ch4_name;"><label for="slider_s">S</label></div>
+                    <div style="grid-area: ch4_range;"><input type="range" min="0" max="100" value="0" class="slider" id="slider_s"></div>
+                    <div style="grid-area: ch4_value;"><label for="slider_s" id="value_s"></label></div>
+                    
+                    <div style="grid-area: ch5_name;"><label for="slider_b">V</label></div>
+                    <div style="grid-area: ch5_range;"><input type="range" min="0" max="100" value="0" class="slider" id="slider_v"></div>
+                    <div style="grid-area: ch5_value;"><label for="slider_v" id="value_v"></label></div>
+                    
+                    <div class="rgb-hex" style="grid-area: footer;">#000000</div>
+                </div></div></div>
+            </div>
         </div>
-        <div class="led" id="led0"">
-            <div class="led-outer"><div class="led-center"><div class="led-inner">
-                <div class="led-index">#0</div>
-                <div>
-                    <label for="slider_r">R</label>
-                    <div class="range"><input type="range" min="0" max="255" value="0" class="slider" id="slider_r"><span class="value" id="value_r"></span></div>
-                </div>
-                <div>
-                    <label for="slider_g">G</label>
-                    <div class="range"><input type="range" min="0" max="255" value="0" class="slider" id="slider_g"><span class="value" id="value_g"></span></div>
-                </div>
-                <div>
-                    <label for="slider_b">B</label>
-                    <div class="range"><input type="range" min="0" max="255" value="0" class="slider" id="slider_b"><span class="value" id="value_b"></span></div>
-                </div>
-                <div>
-                    <label for="slider_h">H</label>
-                    <div class="range"><input type="range" min="0" max="360" value="0" class="slider" id="slider_h"><span class="value" id="value_h"></span></div>
-                </div>
-                <div>
-                    <label for="slider_s">S</label>
-                    <div class="range"><input type="range" min="0" max="100" value="0" class="slider" id="slider_s"><span class="value" id="value_s"></span></div>
-                </div>
-                <div>
-                    <label for="slider_v">V</label>
-                    <div class="range"><input type="range" min="0" max="100" value="0" class="slider" id="slider_v"><span class="value" id="value_v"></span></div>
-                </div>
-                <div id="rgbHex"></div>
-            </div></div></div>
-        </div>
-
     </body>
 
     <script>
@@ -108,7 +152,7 @@
 
         var inflight = null;
         
-        function rgbToHsv() {
+        function rgb_to_hsv() {
             var ledcount = rgb.length;
             for (var ledindex = 0; ledindex < ledcount; ledindex++) { 
                 var r = rgb[ledindex][0] / 255.0;
@@ -137,7 +181,7 @@
             }
         }
 
-        function hsvToRgb() {
+        function hsv_to_rgb() {
             var ledcount = rgb.length;
             for (var ledindex = 0; ledindex < ledcount; ledindex++) { 
                 var h = hsv[ledindex][0];
@@ -165,13 +209,13 @@
             }
         }
 
-        function toHex(n) {
+        function to_hex(n) {
             n = Math.max(0, Math.min(Math.trunc(n),255)); // clamp
             return "0123456789abcdef".charAt((n-n%16)/16) + "0123456789abcdef".charAt(n%16);
         }
 
-        function updateUI() {
-            console.log("updateUI()");
+        function update_ui() {
+            console.log("update_ui()");
 
             var ledcount = rgb.length;
             for (var ledindex = 0; ledindex < ledcount; ledindex++) { 
@@ -193,9 +237,9 @@
                 leddiv.find("#value_s").text(Math.trunc(hsv[ledindex][1] * 100));
                 leddiv.find("#value_v").text(Math.trunc(hsv[ledindex][2] * 100));
 
-                rgbhex = "#" + toHex(rgb[ledindex][0]) + toHex(rgb[ledindex][1]) + toHex(rgb[ledindex][2]);
-                leddiv.find("#rgbHex").text(rgbhex);
-                leddiv.find(".led-center").css("border-color", rgbhex);
+                rgbhex = "#" + to_hex(rgb[ledindex][0]) + to_hex(rgb[ledindex][1]) + to_hex(rgb[ledindex][2]);
+                leddiv.find(".rgb-hex").text(rgbhex);
+                leddiv.find(".panel-center").css("border-color", rgbhex);
             }
         }
 
@@ -214,7 +258,7 @@
             $.post(url); // don't care about any results.
         }
         
-        function postLEDs() {
+        function post() {
             params = "";
 
             var ledcount = rgb.length;
@@ -231,25 +275,31 @@
 
         $(document).ready(function() {
             
-            // Clone UI from led #0 to the rest.
-            led0div = $("#led0");
+            // Clone UI from template to the rest.
+            templatediv = $("#led_template");
 
-            for(i = 7 ; i >= 1 ; i--)
+            for(i = 7 ; i >= 0 ; i--)
             {
-                leddiv = led0div.clone().prop("id", "led" + i);
-                leddiv.find(".led-index").text("#" + i);
+                leddiv = templatediv.clone().prop("id", "led" + i);
+                leddiv.find(".led-index").text("Pixel #" + i);
                 
-                led0div.after(leddiv);
+                templatediv.after(leddiv);
+                
+                leddiv.fadeIn("slow");
 
                 // All LEDs are initialized the same.
                 rgb.push([rgb[0][0], rgb[0][1], rgb[0][2]]); // Force a deep copy.
                 hsv.push([0, 0, 0]); // Values do not matter, they will be calculated from RGB.
             }
 
+            // Remove the template, we don't need it anymore
+            templatediv.remove()
+
             // Wire controls.
             $("#btnReset").click( function() { url = "/reset";        $.post(url) }); 
             $("#btnAuto").click(  function() { url = "/api?manual=0"; $.post(url) }); 
             $("#btnManual").click(function() { url = "/api?manual=1"; $.post(url) }); 
+            $("#btnRead").click(function() { window.open("/api", "_blank") }); 
             
             $("#btnOff").click(off); 
             
@@ -260,49 +310,54 @@
                 switch ($(this).attr("id") ) {
                     case "slider_r":
                         rgb[ledindex][0] = $(this).val();
-                        rgbToHsv();
+                        rgb_to_hsv();
                         break;
                     case "slider_g":
                         rgb[ledindex][1] = $(this).val();
-                        rgbToHsv();
+                        rgb_to_hsv();
                         break;
                     case "slider_b":
                         rgb[ledindex][2] = $(this).val();
-                        rgbToHsv();
+                        rgb_to_hsv();
                         break;
                     case "slider_h":
                         hsv[ledindex][0] = $(this).val() / 360.0;
-                        hsvToRgb();
+                        hsv_to_rgb();
                         break;
                     case "slider_s":
                         hsv[ledindex][1] = $(this).val() / 100.0;
-                        hsvToRgb();
+                        hsv_to_rgb();
                         break;
                     case "slider_v":
                         hsv[ledindex][2] = $(this).val() / 100.0;
-                        hsvToRgb();
+                        hsv_to_rgb();
                         break;
                     default:
                         console.log("unhandled " + $(this).attr("id"));
                         break;
                 }
                 
-                updateUI();
+                update_ui();
             
                 clearTimeout(inflight)
-                inflight = setTimeout(postLEDs, 100);
+                inflight = setTimeout(post, 100);
             });
 
             // Fetch list of available animations and populate list.
-            $.get("/animations", function(animations) {
+            $.get("/api", function(apidata) {
                 // console.log(animations);
-                for (var i = 0; i < animations.length; i++) {
-                    a = $("<li><a href=\"#?" + animations[i] + "\" class=\"animation\" id=\"" + animations[i] + "\">" + animations[i] + "</a></li>");
-                    $("#animations").append(a);
+                for (var i = 0; i < apidata.animations.length; i++) {
+                    btn = $("<button class=\"animation\" id=\"" + apidata.animations[i] + "\">" + apidata.animations[i] + "</buttton>");
+                    $("#animations").append(btn);
+                    btn.fadeIn("slow");
+
+                    // Also fade in the whole section for the very first button.
+                    $("#animations").fadeIn("fast");
                 }
                 
                 // Wire new links to trigger an AJAX call to switch animation.
-                $(".animation").click(function() {
+                $("button.animation").on("click", function() {
+                    console.log('click');
                     animation = $(this).attr("id");
                     url = "/animation?name=" + animation; 
                     $.post(url);
@@ -311,13 +366,13 @@
             });
 
             // Calculate initial HSV values.
-            rgbToHsv();
+            rgb_to_hsv();
 
             // Update the UI once.
-            updateUI();
+            update_ui();
             
             // Synchronize physical LEDs to UI.
-            // postLEDs(); // Don't. We only want to do that when the user actually changes something in the UI.
+            // post(); // Don't. We only want to do that when the user actually changes something in the UI.
         });    
     </script>
     
