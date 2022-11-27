@@ -9,6 +9,7 @@ core1, started from here, runs the pixel animation.
 The code in this module does some simple initialization and then starts both threads.
 '''
 
+import os
 import rp2
 import time
 import _thread
@@ -23,13 +24,15 @@ def Main():
     logger.write('Doorsign firmware 0.0')
     logger.write('<marian.aldenhoevel@marian-aldenhoevel.de>')
     logger.write('https://github.com/MarianAldenhoevel/DoorSign')
-
+    
     # Turn on the onboard-LED to indicate we are on. The LED is later
     # controlled by the network thread.
     machine.Pin('LED', machine.Pin.OUT).on()
 
     # Turn off all neopixels in case the are left on from an old run.
     doorsign.off()
+
+    logger.write('os.uname() = ' + str(os.uname()))
 
     # Report on what we think caused us to lose consciousness last.
     mrc = machine.reset_cause()
@@ -60,7 +63,7 @@ def Main():
     core1.setup()
 
     # Enable hardware watchdog timer.
-    watchdog.enable()
+    #watchdog.enable()
 
     # Start both threads.
     _thread.start_new_thread(core1.task, ()) # NO braces after core1.task, we are passing the function...

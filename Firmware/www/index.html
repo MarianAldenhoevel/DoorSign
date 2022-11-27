@@ -1,7 +1,8 @@
 <!DOCTYPE html>
 <html>
     <head>
-        <script src="https://code.jquery.com/jquery-3.6.1.min.js"></script>
+        <!-- <script src="https://code.jquery.com/jquery-3.6.1.min.js"></script> -->
+        <script src="jquery-3.6.1.min.js"></script>
         <style>
             .led {
                 width: 20em;
@@ -60,11 +61,12 @@
             
         <h1>Heinrichsweg 9</h1>
         <div id="buttons">
-            <button id="random_animation">Random animation</button>
-            <button id="animation_run">Run animation</button>
-            <button id="animation_stop">Stop animation</button>
+            <button id="btnReset">Reset</button>
+            <button id="btnOff">Lights off</button>
+            <button id="btnAuto">Auto</button>
+            <button id="btnManual">Manual</button>
             <ul id='animations'>
-                <a href="#'>twinkle</a>
+                <li><a href="#" id="" class="animation">random</a></li>
             </ul>
         </div>
         <div class="led" id="led0"">
@@ -197,6 +199,21 @@
             }
         }
 
+        function off() {
+            params = "manual=1";
+
+            var ledcount = rgb.length;
+            for (var ledindex = 0; ledindex < ledcount; ledindex++) { 
+                if (params) {
+                    params += "&";
+                }                        
+                params += "&r" + ledindex + "=0&g" + ledindex +"=0&b" + ledindex + "=0";
+            }
+
+            url = "/api?" + params
+            $.post(url); // don't care about any results.
+        }
+        
         function postLEDs() {
             params = "";
 
@@ -209,8 +226,6 @@
             }
 
             url = "/api?" + params
-            // console.log("postLEDs() " + url);
-            
             $.post(url); // don't care about any results.
         }
 
@@ -232,9 +247,12 @@
             }
 
             // Wire controls.
-            $("#animation_run").click(function() { url = "/api?nextanimation"; $.post(url) }); 
-            $("#animation_stop").click(function() { url = "/api?manual=1"; $.post(url) }); 
-            $("#random_animation").click(function() { url = "/api?manual=1"; $.post(url) }); 
+            $("#btnReset").click( function() { url = "/reset";        $.post(url) }); 
+            $("#btnAuto").click(  function() { url = "/api?manual=0"; $.post(url) }); 
+            $("#btnManual").click(function() { url = "/api?manual=1"; $.post(url) }); 
+            
+            $("#btnOff").click(off); 
+            
             $("input[type=range]").on("input", function() {
                 ledindex = $(this).parents(".led").attr("id").substring(3);
                 console.log("changing led #" + ledindex);
@@ -277,17 +295,18 @@
 
             // Fetch list of available animations and populate list.
             $.get("/animations", function(animations) {
-                console.log(data);
-                for (var i = 0; i < len(animations); i++) {
-                    a = $("<a href=\"#\" class=\"animation\" id=\" + animations[i] + "\">" + animations[i] + "</a>");
+                // console.log(animations);
+                for (var i = 0; i < animations.length; i++) {
+                    a = $("<li><a href=\"#?" + animations[i] + "\" class=\"animation\" id=\"" + animations[i] + "\">" + animations[i] + "</a></li>");
                     $("#animations").append(a);
                 }
                 
+                // Wire new links to trigger an AJAX call to switch animation.
                 $(".animation").click(function() {
                     animation = $(this).attr("id");
-                    url = "/nextanimation?name=" + animation; 
+                    url = "/animation?name=" + animation; 
                     $.post(url);
-                }
+                });
                 
             });
 

@@ -16,9 +16,9 @@ Care is taken that all enabled animations are used and never back-to-back.
 animation_switch_interval_ms = 30000 # Time in ms before animations are switched-
 animation_blend_ms = 5000 # Blend time between animations.
 
-# Set to empty string to request a random next animation to start at the next
+# Set to empty string to request a random animation to start at the next
 # possible moment or set to the name of an animation to run next.
-request_next_animation = None 
+request_animation = None 
 
 final_dimmer = 0.2
 
@@ -53,7 +53,7 @@ def setup():
         logger.write('Available animations: ' + ', '.join(animation.__name__ for animation in animations))
     
 def task():
-    global request_next_animation
+    global request_animation
     
     logger.register_thread_name('ANIM')
     watchdog.feed() # First feed to make us known to the WDT
@@ -93,46 +93,55 @@ def task():
         frame_ms = time.ticks_ms()
         
         if (active_animation):
-            # Get the pixels for the active animation.
-            active_pixels = active_animation.update(frame_ms)
-
-            if request_next_animation != None:
+            
+            # Is there a requested for an animation switch? If so execute it immediately. 
+            if request_animation != None:
                 candidate_animation = None
                 
-                if request_next_animation = '':
-                    # Pick a next animation to execute. Brutally sample until we do not 
-                    # get the same as the active one.           
-                    while True:
-                        candidate_animation = random.choice(new_animations)                                                
-                        if next_animation is not active_animation:
-                            break
+                if (request_animation == ''):
+                    if (len(animations) >= 2):
+                        # Pick a random next animation to execute. Brutally sample until we do not 
+                        # get the same as the active one.           
+                        while True:
+                            candidate_animation = random.choice(new_animations)                                                
+                            if next_animation is not active_animation:
+                                break
+                    else:
+                        logger.write('Only one single animation enabled, cannot pick next at random')
                 else:
-                    # Pick the next animation by name
-                    request_next_animation = request_next_animation.upper()
+                    # Pick the next animation by name.
                     for animation in animations:
-                        if animation.__name__.upper() == request_next_animation:
+                        if animation.__name__.upper() == request_animation.upper():
                             candidate_animation = animation
                             break
-                    
-                # If we found and selected the next animation update the lists
-                # and start it now.
+                    if not candidate_animation:
+                        logger.write('Next animation \"' + request_animation + '\" not found')
+                
+                # If we picked or found the new animation now update the lists and start
+                # it immediately without a blend.
                 if candidate_animation:
-                    next_animation = candidate_animation
-                    new_animations.remove(next_animation)
-                    old_animations.append(next_animation)    
-                    if len(new_animations) == 0:
-                        new_animations = old_animations
-                        old_animations = []
-                    next_animation_start_ms = frame_ms
+                    active_animation = candidate_animation
+                    active_animation_start_ms = frame_ms
+                    next_animation = None
+                    
+                    if active_animation in new_animations:
+                        new_animations.remove(active_animation)
+                        old_animations.append(active_animation)    
+                        if len(new_animations) == 0:
+                            new_animations = old_animations
+                            old_animations = []
                     doorsign.setManualControl(False)
             
-                    logger.write('Next animation: ' + next_animation.__name__)
+                    logger.write('Switching to ' + ('random ' if not request_animation else '') + 'requested ' + active_animation.__name__)
                 else:
-                    logger.write('Could not honour request for ' + ('random ' if request_next_animation == '' else '') + 'next animation ' + request_next_animation)
+                    logger.write('Could not honour request for ' + ('random ' if request_animation == '' else '') + 'next animation ' + request_animation)
                     
                 # Reset request for next animation.
-                request_next_animation = None        
-                
+                request_animation = None                    
+            
+            # Get the pixels for the active animation.
+            active_pixels = active_animation.update(frame_ms)
+    
             # Are we running a next animation?
             if (next_animation):
                 # Yes. Get their pixels.
@@ -160,7 +169,7 @@ def task():
                 pixels = active_pixels
                 
                 # Do we have a next animation in our portfolio and do we want it now?
-                if (len(animations) >= 2) and (time.ticks_diff(frame_ms, active_animation_start_ms) >= animation_switch_interval_ms):
+                if (len(animations) >= 2) and (not doorsign.manual_control) and (time.ticks_diff(frame_ms, active_animation_start_ms) >= animation_switch_interval_ms):
                     # Pick a next animation to execute. Brutally sample until we do not 
                     # get the same as the active one.           
                     while True:

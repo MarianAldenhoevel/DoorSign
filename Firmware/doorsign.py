@@ -20,10 +20,10 @@ import random
 from machine import Pin
 from neopixel import NeoPixel
 import _thread
+import lock
 import logger
 
-pixel_lock = _thread.allocate_lock()
-updating = 0
+pixel_lock = lock.RecursiveLock()
 
 np = NeoPixel(machine.Pin(4, machine.Pin.OUT), pixelCount)
 
@@ -38,20 +38,17 @@ frame_intervall_ms = 1000//framerate # How many ms per frame?
 manual_control = False
 
 def beginUpdate():
-    global updating
-
-    if updating == 0:
-        pixel_lock.acquire()
-        updating += 1
+    pixel_lock.acquire()
     
 def endUpdate():
-    global updating
+    assert pixel_lock.mine() # If not someone has not wrapped their begin-/endUpdate-calls correctly. 
     
-    if updating > 0:
-        updating -= 1
-        if updating == 0:
-            np.write()
-            pixel_lock.release()
+    # Safe to query the lock. It is ours. If we are about to actually unlock send the final
+    # pixel data out.
+    if pixel_lock.count() == 1:
+        np.write()
+        
+    pixel_lock.release()
 
 def setManualControl(manual):
     global manual_control

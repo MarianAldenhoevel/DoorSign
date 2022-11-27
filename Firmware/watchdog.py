@@ -18,10 +18,11 @@ import machine
 import _thread
 import time
 import logger
+import lock
 
 wdt = None
 wdt_simulated_reset_occured = False
-wdt_lock = _thread.allocate_lock()
+wdt_lock = lock.RecursiveLock()
         
 thread_feed_ms = {}
     

@@ -17,6 +17,7 @@ In operation the LED turns on while network requests are being serviced.
 '''
 
 import rp2
+import os
 import machine
 import network
 import ubinascii
@@ -24,10 +25,11 @@ import time
 import socket
 import select
 import ujson
-import logger
-import doorsign
 import watchdog
 import struct
+import core1
+import logger
+import doorsign
 
 onboard = machine.Pin('LED', machine.Pin.OUT)
 myip = None
@@ -210,7 +212,8 @@ def handleHttp(socket):
             method = ''
             resource = ''
             response = ''
-            
+            responsefilesize = None 
+
             try:        
                 # Extract method and the resource requested from the request. 
                 method = request[2:request.find(' ')]
@@ -240,14 +243,12 @@ def handleHttp(socket):
             
                     params[name] = value
         
-                print(params)
-    
                 # Default to index page.
                 if (resource == ''):
                     resource = 'index.html'
-            
+
                 # Determine content-type by file extension.
-                ext = resource[resource.find('.'):]
+                ext = resource[resource.rfind('.'):]
                 if ext == '.html':
                     contenttype = 'text/html'
                 elif ext == '.ico':
@@ -265,11 +266,10 @@ def handleHttp(socket):
                 else:
                     contenttype = 'application/octet-stream'
         
-                # This server either serves static resource on GET requests OR
-                # answers with (minimal) dynamic content to POST requests.
-
                 if (method == 'GET') or (method == 'HEAD'):        
-                    
+                    # GET or HEAD: First test for the special endpoints that implement the
+                    # API. If no match assume it is for static content.  
+
                     if (resource == 'api'):
                         # Return sensor data and LED status.
                         response = ujson.dumps(apiData())
@@ -277,36 +277,38 @@ def handleHttp(socket):
                     
                     elif (resource == 'animations'):
                         # Return the list of enabled animation modules.
-                        response = [a.__name__ for a in core1.animations]
+                        response = ujson.dumps([a.__name__ for a in core1.animations])
                         contenttype = 'application/json'            
                     
                     else:   
-                    # Load a static resource.
-                        with open('/www/' + resource, 'rb') as file:
-                            response = file.read()
-                        
+                        # Static resource. Just read the size here. We will open and send the file
+                        # later in chunks to support large content. If the file does not exist
+                        # this will also throw the exception we want to catch to produce a 404.
+                        responsefilesize = os.stat('/www/' + resource)[6]
+                            
                     statuscode = 200
                     statustext = 'OK'
             
                 elif method == 'POST':
+                    # POST: Test for special api endpoints. If no match treat as file upload
+                    # for a poor man's OTA update.
                     
-                    if resource == 'nextanim':
-                        
+                    if resource == 'reset':
+                        # Well. This will not even produce a http result, just hit itself 
+                        # over the head with a hammer right now.
+                        machine.reset()
+
+                    elif resource == 'animation':
+                        # Request core0 to switch to a new animation. Pass in the name of the
+                        # next animation module or leave empty for a random next animation.
+                        core1.request_animation = params.get('name', '')
                         
                         # Build response                                 
-                        response = ujson.dumps(apiData())
+                        response = ujson.dumps([a.__name__ for a in core1.animations])
                         
-                        # End pixel update phase. This will send the data out to the LEDs.
-                        doorsign.endUpdate()                    
-
                         contenttype = 'application/json'            
                         statuscode = 200
                         statustext = 'OK'
-                        
-                    if resource == 'nextanimation'
-                        # Request core0 to switch to a new animation. Pass in the name of the
-                        # next animation module or leave empty for a random next animation.
-                        core1.request_next_animation = params.get('name', '')
                         
                     elif resource == 'api':
                         # Read each pixel and update if there is data for that channel.
@@ -350,7 +352,10 @@ def handleHttp(socket):
                         statuscode = 200
                         statustext = 'OK'            
                     else:
-                        # Unsupported endpoint
+                        # Not a special endpoint. Treat as file upload. We use raw data upload so
+                        # the filename is simply the resource POSTed to and the data is the whole
+                        # body of the request.
+                        payload = request[request.find('\r\n\r\n'):]
                         statuscode = 404
                         statustext = 'Not Found (Endpoint \"' + resource + '\")' 
                 else:
@@ -373,16 +378,43 @@ def handleHttp(socket):
                 statustext = 'Internal Server Error (' + str(e) + ')'
                     
             finally:
-                logger.write(addr[0] + ' ' + method + ' \"' + resource + (('?' + paramstr) if paramstr else '') + '\" ' + str(statuscode) + ' ' + statustext + ((' (' + str(len(response)) + ' bytes of ' + contenttype + ')') if response else '')) 
+                # At this point we have collected everything we need to produce the response to the client.
+
+                # Determine content length. Either we have a string in response or we know we are about
+                # to send a static file.
+                if responsefilesize:
+                    contentlength = str(responsefilesize)
+                elif response:
+                    contentlength = len(response)
+                else:
+                    contentlength = None
+
+                # Print something resembling common log format.
+                logger.write(addr[0] + ' ' + method + ' \"' + resource + (('?' + paramstr) if paramstr else '') + '\" ' + str(statuscode) + ' ' + statustext + ((' (' + str(contentlength) + ' bytes of ' + contenttype + ')') if contentlength else '')) 
+                
+                # Send http header with status.
                 cl.sendall('HTTP/1.0 ' + str(statuscode) + ' ' + statustext)
                 
-                if response:
-                    cl.sendall('\r\nContent-Length: ' + str(len(response)) + '\r\nContent-Type: ' + contenttype + '\r\n')
+                if contentlength:
+                    cl.sendall('\r\nContent-Length: ' + str(contentlength) + '\r\nContent-Type: ' + contenttype)
                 
-                cl.sendall('\r\n')
+                cl.sendall('\r\n\r\n')
                     
-                if response and (method != 'HEAD'): # HEAD: The server MUST NOT return a content-body
-                    cl.sendall(response)
+                # Send body.
+                if method != 'HEAD': # HEAD: The server MUST NOT return a content-body
+                    if responsefilesize:
+                        # Open file and send it in chunks.
+                        with open('/www/' + resource, 'rb') as f:
+                            while True:
+                                buf = f.read(2048)
+                                if not buf:
+                                    # No more bytes read. We are done.
+                                    break
+                                cl.sendall(buf)
+                                
+                    elif response:
+                        # Just answer with the prepared content.
+                        cl.sendall(response)
                 
                 cl.close()
                 logger.write('Connection closed')
@@ -470,7 +502,7 @@ def task():
     onboard.on()
 
     rp2.country('DE')
-
+    
     if ('STA' in config) and ('AP' in config):
         fatalConnectionError(2, 'Configuration error: Both STA and AP defined in config')
     elif 'STA' in config:
@@ -479,15 +511,17 @@ def task():
     elif 'AP' in config:
         logger.write('Setting up as AP (Access Point)')
         wlan = network.WLAN(network.AP_IF)
-        wlan.config(
-                essid = config['AP']['essid'],
-                password = config['AP']['pw']
-        )
+        #wlan.config(security = 3)
+        #wlan.config(authmode = 3)
+        wlan.config(essid = config['AP']['essid'])
+        if config['AP']['pw']:
+            wlan.config(password = config['AP']['pw'])
     else:
         onboard.off()
         logger.write('Neither STA nor AP defined in config. Network is done.')
         return
         
+    # wlan.config(hostname = 'doorsign')
     wlan.active(True)
 
     # logger.write(str(wlan.scan()))

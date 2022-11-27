@@ -6,8 +6,9 @@ It associated thread-IDs with readable names and synchronizes print()s
 
 import time
 import _thread
+import lock
 
-logger_lock = _thread.allocate_lock()
+logger_lock = lock.RecursiveLock()
 
 thread_names = {}
 
