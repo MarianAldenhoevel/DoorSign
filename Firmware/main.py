@@ -37,10 +37,8 @@ def Main():
     v = os.statvfs('/')
     size_bytes = v[1]*v[2]
     free_bytes = v[0]*v[3]
-    inodes = v[5]
-    free_inodes = v[6]
     
-    logger.write('os.statvsf(): {} bytes, {} free, {} inodes, {} free'.format(size_bytes, free_bytes, inodes, free_inodes)) 
+    logger.write('os.statvsf(): {} bytes, {} free'.format(size_bytes, free_bytes)) 
     
     # Report on what we think caused us to lose consciousness last.
     mrc = machine.reset_cause()

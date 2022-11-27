@@ -187,18 +187,14 @@ def apiData():
         v = os.statvfs('/')
         size_bytes = v[1]*v[2]
         free_bytes = v[0]*v[3]
-        inodes = v[5]
-        free_inodes = v[6]
         
         result['manual_control'] = doorsign.manual_control
         result['pixels'] = [{'R': p[0], 'G': p[1], 'B': p[2]} for p in doorsign.getPixels()]            
-        result['adc'] = [doorsign.adc[i].read_u16() for i in range(3)]
+        result['adc'] = doorsign.readADC()
         result['animations'] = [a.__name__ for a in core1.animations]
         result['active_animation'] = (core1.active_animation.__name__ if core1.active_animation else None);
         result['size_bytes'] = size_bytes
         result['free_bytes'] = free_bytes
-        result['inodes'] = inodes
-        result['free_inodes'] = free_inodes
     finally:
         doorsign.endUpdate()
     
@@ -356,7 +352,7 @@ def handleHttp(socket):
                         hasChannelData = False
                         doorsign.beginUpdate()
                         try:
-                            for pixelIndex in range(doorsign.pixelCount):                                                            
+                            for pixelIndex in range(doorsign.pixel_count):                                                            
                                 r, g, b = doorsign.getPixel(pixelIndex)
                                 
                                 p = 'r' + str(pixelIndex) 

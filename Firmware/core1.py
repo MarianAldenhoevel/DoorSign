@@ -20,7 +20,7 @@ animation_blend_ms = 5000 # Blend time between animations.
 # possible moment or set to the name of an animation to run next.
 request_animation = None 
 
-final_dimmer = 0.2
+final_dimmer = 1.0
 
 import machine
 import time
@@ -205,7 +205,7 @@ def task():
             
         else:
             # No animation at all. All off.
-            pixels = [[0, 0, 0]] * doorsign.pixelCount
+            pixels = [[0, 0, 0]] * doorsign.pixel_count
         
         pixels = doorsign.scalePixels(pixels, final_dimmer);
         

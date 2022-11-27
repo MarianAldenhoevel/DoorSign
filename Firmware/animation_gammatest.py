@@ -2,7 +2,7 @@
 This animation blends each pixels between different randomly selected colors
 '''
 
-enabled = True
+enabled = False
 blend_ms = 3000
 
 import time
@@ -18,6 +18,9 @@ endpixels = None
 
 blendstart_ms = None
 
+p1 = (0, 0, 255)
+p2 = (255, 0, 0)
+
 def update(frame_ms, first_frame = False):
     global lastframe_ms
     global startpixels
@@ -26,9 +29,12 @@ def update(frame_ms, first_frame = False):
     
     if first_frame or (lastframe_ms == None):        
         # First frame.
-        startpixels = [doorsign.randomColor() for _ in range(doorsign.pixel_count)]
-        endpixels =   [doorsign.randomColor() for _ in range(doorsign.pixel_count)]
-
+        startpixels = [(0, 0, 0)] * doorsign.pixel_count
+        endpixels =   [(0, 0, 0)] * doorsign.pixel_count
+        
+        startpixels[0] = p1
+        endpixels[0] = p2
+        
         blendstart_ms = frame_ms
         
         pixels = startpixels[:]
@@ -42,8 +48,12 @@ def update(frame_ms, first_frame = False):
             # Blend finished. Return end pixels and start new blend.
             pixels = endpixels[:]
             startpixels = endpixels[:]
-            endpixels =   [doorsign.randomColor() for _ in range(doorsign.pixel_count)]
-
+            
+            if startpixels[0] == p1:
+                endpixels[0] = p2
+            else:
+                endpixels[0] = p1
+            
             blendstart_ms = frame_ms
         else:
             # Return current blend.

@@ -26,12 +26,12 @@ def update(frame_ms, first_frame = False):
     
     if first_frame or (lastframe_ms == None):        
         # First frame.
-        startpixels = [doorsign.randomColor()] * doorsign.pixelCount
-        endpixels =   [doorsign.randomColor()] * doorsign.pixelCount
+        startpixels = [doorsign.randomColor()] * doorsign.pixel_count
+        endpixels =   [doorsign.randomColor()] * doorsign.pixel_count
 
         blendstart_ms = frame_ms
         
-        pixels = startpixels
+        pixels = startpixels[:]
     else:
         # Consecutive frame.
         diff = time.ticks_diff(frame_ms, blendstart_ms)
@@ -40,9 +40,9 @@ def update(frame_ms, first_frame = False):
         
         if (blend >= 1.0):
             # Blend finished. Return end pixels and start new blend.
-            pixels = endpixels
-            startpixels = endpixels
-            endpixels =   [doorsign.randomColor()] * doorsign.pixelCount
+            pixels = endpixels[:]
+            startpixels = endpixels[:]
+            endpixels =   [doorsign.randomColor()] * doorsign.pixel_count
 
             blendstart_ms = frame_ms
         else:

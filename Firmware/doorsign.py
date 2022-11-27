@@ -10,8 +10,10 @@ lock.
 So make sure you try..finally every one of them!
 '''
 
-pixelCount = 8 # Hardware-Config: Number of pixels on the board.
+pixel_count = 8 # Hardware-Config: Number of pixels on the board.
 framerate = 25 # Frames/s for animations.
+
+gamma = 2.8
 
 import machine
 import math
@@ -23,14 +25,22 @@ import _thread
 import lock
 import logger
 
-pixel_lock = lock.RecursiveLock()
+# Set up gamma correction lookup table.
+_gamma_table = []
 
-np = NeoPixel(machine.Pin(4, machine.Pin.OUT), pixelCount)
+for input in range(256):
+    output = math.trunc((((input / 255) ** gamma) * 255) + 0.5)
+    _gamma_table.append(output)
 
-adc = [
-    machine.ADC(26),	# ADC0
-    machine.ADC(28),	# ADC1
-    machine.ADC(28)		# ADC2
+_pixel_lock = lock.RecursiveLock()
+
+_rawpixels = [(0, 0, 0)] * pixel_count
+_np = NeoPixel(machine.Pin(4, machine.Pin.OUT), pixel_count)
+
+_adc_pins = [
+    machine.ADC(26), # ADC0
+    machine.ADC(28), # ADC1
+    machine.ADC(28)  # ADC2
 ]
 
 frame_intervall_ms = 1000//framerate # How many ms per frame?
@@ -38,26 +48,33 @@ frame_intervall_ms = 1000//framerate # How many ms per frame?
 manual_control = False
 
 def beginUpdate():
-    pixel_lock.acquire()
+    _pixel_lock.acquire()
     
 def endUpdate():
-    assert pixel_lock.mine() # If not someone has not wrapped their begin-/endUpdate-calls correctly. 
+    assert _pixel_lock.mine() # If not someone has not wrapped their begin-/endUpdate-calls correctly. 
     
     # Safe to query the lock. It is ours. If we are about to actually unlock send the final
     # pixel data out.
-    if pixel_lock.count() == 1:
-        np.write()
+    if _pixel_lock.count() == 1:
+        _np.write()
         
-    pixel_lock.release()
+    _pixel_lock.release()
 
 def setManualControl(manual):
     global manual_control
     
-    pixel_lock.acquire()
+    _pixel_lock.acquire()
     try:
         manual_control = manual
     finally:
-        pixel_lock.release()
+        _pixel_lock.release()
+
+def readADC():
+    result = []
+    for pin in _adc_pins:
+        result.append(pin.read_u16())
+
+    return result
 
 '''
 Convert from RGB color space to HSV. 
@@ -153,8 +170,8 @@ Scale all pixels by a floating point scalefactor. The factor is arbitrary,
 the results are truncated and clamped.
 '''
 def scalePixels(pixels , scalefactor):
-    result = [(0, 0, 0)] * pixelCount
-    for pixelIndex in range(pixelCount):
+    result = [(0, 0, 0)] * pixel_count
+    for pixelIndex in range(pixel_count):
         result[pixelIndex] = scalePixel(pixels[pixelIndex], scalefactor)
         
     return result
@@ -180,8 +197,8 @@ def blendPixelLinear(pixel1, pixel2, blend):
 Linear blend between two complete pixel arrays, blend is a float between 0 and 1.
 '''
 def blendPixelsLinear(pixels1, pixels2, blend):
-    result = [(0, 0, 0)] * pixelCount
-    for pixelIndex in range(pixelCount):
+    result = [(0, 0, 0)] * pixel_count
+    for pixelIndex in range(pixel_count):
         result[pixelIndex] = blendPixelLinear(pixels1[pixelIndex], pixels2[pixelIndex], blend)
         
     return result
@@ -239,8 +256,8 @@ More clever blend between two single pixels, blend is a float between 0 and 1.
 The blend happens in HSV space with H going the "short way".
 '''
 def blendPixels(pixels1, pixels2, blend):
-    result = [(0, 0, 0)] * pixelCount
-    for pixelIndex in range(pixelCount):
+    result = [(0, 0, 0)] * pixel_count
+    for pixelIndex in range(pixel_count):
         result[pixelIndex] = blendPixel(pixels1[pixelIndex], pixels2[pixelIndex], blend)
         
     return result
@@ -251,7 +268,14 @@ Set a single pixel.
 def setPixel(pixelIndex, pixel):
     beginUpdate()
     try:
-        np[pixelIndex] = pixel
+        # Store the raw rgb value for reading back.
+        _rawpixels[pixelIndex] = pixel
+
+        # Gamma-correct the RGB values.
+        gammapixel = (_gamma_table[pixel[0]], _gamma_table[pixel[1]], _gamma_table[pixel[2]])
+
+        # Send the corrected values to the hardware.
+        _np[pixelIndex] = gammapixel
     finally:
         endUpdate()
 
@@ -261,7 +285,7 @@ Update all pixels from an array.
 def setPixels(pixels):
     beginUpdate()
     try:
-        for pixelIndex in range(pixelCount):
+        for pixelIndex in range(pixel_count):
             setPixel(pixelIndex, pixels[pixelIndex])            
     finally:
         endUpdate()        
@@ -270,22 +294,16 @@ def setPixels(pixels):
 Read a single pixel.
 '''            
 def getPixel(pixelIndex):
-    beginUpdate()
-    try:
-        pixel = np[pixelIndex]
-    finally:
-        endUpdate()
+    return _rawpixels[pixelIndex]
         
-    return pixel
-
 '''
 Read all pixels.
 '''    
 def getPixels():
     beginUpdate()
     try:
-        pixels = [(0,0,0)] * pixelCount
-        for pixelIndex in range(pixelCount):
+        pixels = [(0,0,0)] * pixel_count
+        for pixelIndex in range(pixel_count):
             pixels[pixelIndex] = getPixel(pixelIndex)            
     finally:
         endUpdate()
@@ -296,7 +314,7 @@ def getPixels():
 Turn all pixels off
 '''        
 def off():
-    pixels = [(0, 0, 0)] * pixelCount
+    pixels = [(0, 0, 0)] * pixel_count
     setPixels(pixels)
 
 '''
@@ -315,3 +333,5 @@ if __name__ == '__main__':
 
     logger.write('__main__: All pixels off')
     off()
+    
+    print(_gamma_table)
