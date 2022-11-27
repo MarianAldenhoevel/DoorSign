@@ -1,7 +1,7 @@
 # DoorSign
 A PCB to be used as door sign.
 
-<img alt="KiCAD 3D view" width="50%" src="https://github.com/MarianAldenhoevel/DoorSign/blob/main/Firmware/www/favicon_src.png" />
+<img alt="KiCAD 3D view" width="50%" src="https://github.com/MarianAldenhoevel/DoorSign/blob/main/title.png" />
 
 * The board outline indicates the house number
 * Silkscreen shows name and miscellanous information
