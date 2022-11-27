@@ -8,7 +8,7 @@ A PCB to be used as door sign.
 * Mounting holes and hole for an illuminated ringer-button
 * Footprints and layout to support a Raspberry Pi Pico (plain and W-version interchangeable), a LDR based light sensor, Neopixel LEDs and circuitry to detect a ringer-button press
 
-Also firmware for the Pico to animate the LEDs.
+Also firmware for the Pico to animate the LEDs suffering from feature-bloat. Guilty.
 
 Propably not useable directly by forking unless you happen to be me and live here. But if you find bits useful, go for it.
 
