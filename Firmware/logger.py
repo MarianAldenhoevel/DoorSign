@@ -5,7 +5,7 @@ It associated thread-IDs with readable names and synchronizes print()s
 '''
 
 logfile_size = 10*1024 # Rotate after this many bytes.
-logfile_count = 5 # Keep this many log files around.
+logfile_count = 0 # Keep this many log files around. 0 to disable log to file.
 logfolder = './log'
 
 import os
@@ -19,15 +19,16 @@ _thread_names = {}
 _current_index = None
 _current_filename = None
 
-# Find the first free logfile index 
-files = os.listdir()
-files = list(filter(lambda file: file.startswith('log.') and file.endswith('.txt'), os.listdir(logfolder)))
-if files:
-    files.sort()
-    _current_index = int(files[-1].split('.')[1])
-else:
-    _current_index = 1
-_current_filename = logfolder+ '/log.' + str(_current_index) + '.txt'
+if logfile_count:
+    # Find the first free logfile index 
+    files = os.listdir()
+    files = list(filter(lambda file: file.startswith('log.') and file.endswith('.txt'), os.listdir(logfolder)))
+    if files:
+        files.sort()
+        _current_index = int(files[-1].split('.')[1])
+    else:
+        _current_index = 1
+    _current_filename = logfolder+ '/log.' + str(_current_index) + '.txt'
 
 '''
 Associates a name with the current thread ID
@@ -76,36 +77,37 @@ def write(msg):
         
         print(msg)
 
-        try:
-            # Append to current log file. 
-            with open(_current_filename, 'a+') as f:
-                f.write(msg + '\n')
-        
-            s = os.stat(_current_filename)
-            if isinstance(t, os.stat_result):
-                # Adapt to regular Python.
-                size = s.st_size
-            else:
-                size = s[6]
+        if logfile_count:
+            try:
+                # Append to current log file. 
+                with open(_current_filename, 'a+') as f:
+                    f.write(msg + '\n')
+            
+                s = os.stat(_current_filename)
+                if isinstance(t, os.stat_result):
+                    # Adapt to regular Python.
+                    size = s.st_size
+                else:
+                    size = s[6]
 
-            if size >= logfile_size:
-                print('rotate')
+                if size >= logfile_size:
+                    print('rotate')
 
-                # Start next log file when we log again.
-                _current_index += 1
-                _current_filename = logfolder + '/log.' + str(_current_index) + '.txt'
-          
-                # Cleanup old logs.
-                files = os.listdir()
-                files = list(filter(lambda file: file.startswith('log.') and file.endswith('.txt'), os.listdir(logfolder)))
-                print(files)
-                files.sort()
-                while len(files) > logfile_count:
-                    os.remove(logfolder + '/' + files.pop(0))
-                
-        except Exception as e:
-            # print(e) # Don't use the logger itself it doesn't feel too well.
-            pass
+                    # Start next log file when we log again.
+                    _current_index += 1
+                    _current_filename = logfolder + '/log.' + str(_current_index) + '.txt'
+            
+                    # Cleanup old logs.
+                    files = os.listdir()
+                    files = list(filter(lambda file: file.startswith('log.') and file.endswith('.txt'), os.listdir(logfolder)))
+                    print(files)
+                    files.sort()
+                    while len(files) > logfile_count:
+                        os.remove(logfolder + '/' + files.pop(0))
+                    
+            except Exception as e:
+                # print(e) # Don't use the logger itself it doesn't feel too well.
+                pass
 
     finally:
         _logger_lock.release()
