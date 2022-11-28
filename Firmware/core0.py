@@ -451,7 +451,6 @@ def handleHttp(socket):
                 logger.write(addr[0] + ' ' + method + ' \"' + resource + (('?' + paramstr) if paramstr else '') + '\" ' + str(statuscode) + ' ' + statustext + ((' (' + str(contentlength) + ' bytes of ' + contenttype + ')') if contentlength else '')) 
                 
                 # Send http header with status.
-                time.sleep(5)
                 cl.sendall('HTTP/1.0 ' + str(statuscode) + ' ' + statustext)
                 
                 if contentlength:

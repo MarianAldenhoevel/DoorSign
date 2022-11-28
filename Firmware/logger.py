@@ -5,7 +5,7 @@ It associated thread-IDs with readable names and synchronizes print()s
 '''
 
 logfile_size = 10*1024 # Rotate after this many bytes.
-logfile_count = 0 # Keep this many log files around. 0 to disable log to file.
+logfile_count = 5 # Keep this many log files around. 0 to disable log to file.
 logfolder = './log'
 
 import os
@@ -18,6 +18,11 @@ _thread_names = {}
 
 _current_index = None
 _current_filename = None
+
+try:
+    os.mkdir(logfolder)
+except:
+    pass
 
 if logfile_count:
     # Find the first free logfile index 
@@ -63,12 +68,7 @@ def write(msg):
 
     _logger_lock.acquire()
     try:
-        t = time.gmtime()
-        if isinstance(t, time.struct_time):
-            # Adapt to regular Python
-            t = (t.tm_year, t.tm_mon, t.tm_mday, t.tm_hour, t.tm_min, t.tm_sec, None, None)
-
-        y, mo, d, h, mi, s, _, _ = t
+        y, mo, d, h, mi, s, _, _ = time.gmtime()
         msg = '{:04d}.{:02d}.{:02d} {:02d}:{:02d}:{:02d} [{:s}] {:s}'.format(
             y, mo, d, h, mi, s,
             get_thread_id(),
@@ -83,16 +83,8 @@ def write(msg):
                 with open(_current_filename, 'a+') as f:
                     f.write(msg + '\n')
             
-                s = os.stat(_current_filename)
-                if isinstance(t, os.stat_result):
-                    # Adapt to regular Python.
-                    size = s.st_size
-                else:
-                    size = s[6]
-
+                size = os.stat(_current_filename)[6]
                 if size >= logfile_size:
-                    print('rotate')
-
                     # Start next log file when we log again.
                     _current_index += 1
                     _current_filename = logfolder + '/log.' + str(_current_index) + '.txt'
@@ -100,7 +92,6 @@ def write(msg):
                     # Cleanup old logs.
                     files = os.listdir()
                     files = list(filter(lambda file: file.startswith('log.') and file.endswith('.txt'), os.listdir(logfolder)))
-                    print(files)
                     files.sort()
                     while len(files) > logfile_count:
                         os.remove(logfolder + '/' + files.pop(0))
