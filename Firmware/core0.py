@@ -200,7 +200,7 @@ def apiData():
         free_bytes = v[0]*v[3]
         
         # Get uptime. May wrap around and give values that are too short.
-        ticks = time.ticks_diff(_boot_ms, time.ticks_ms())
+        ticks = time.ticks_diff(time.ticks_ms(), _boot_ms)
         s, ms = divmod(ticks, 1000)
         m, s = divmod(s, 60)
         h, m = divmod(m, 60)

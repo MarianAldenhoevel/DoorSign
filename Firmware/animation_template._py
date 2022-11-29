@@ -3,6 +3,7 @@ This is a template for a new animation. It lays out convention and API. Start wi
 '''
 
 enabled = True # This is required configuration to en- and disable animations without deleting the code
+preferred_duration_ms = 60 * 60 * 1000 # How long should this animation be scheduled for typically?
 
 '''
 Put user-serviceable configuration for the animation here. Colors, speeds etc.

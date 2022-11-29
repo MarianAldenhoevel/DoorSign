@@ -3,7 +3,8 @@ This animation blends each pixels between one uniform randomly selected colors
 '''
 
 enabled = True
-blend_ms = 3000
+blend_ms = 2 * 60 * 1000
+preferred_duration_ms = 60 * 60 * 1000
 
 import time
 import math
@@ -26,8 +27,19 @@ def update(frame_ms, first_frame = False):
     
     if first_frame or (lastframe_ms == None):        
         # First frame.
-        startpixels = [doorsign.randomColor()] * doorsign.pixel_count
-        endpixels =   [doorsign.randomColor()] * doorsign.pixel_count
+        pixel = doorsign.randomColor()
+        startpixels = [(0, 0, 0)] * doorsign.pixel_count
+        startpixels[1] = pixel
+        startpixels[3] = pixel
+        startpixels[5] = pixel
+        startpixels[7] = pixel
+
+        pixel = doorsign.randomColor()
+        endpixels = [(0, 0, 0)] * doorsign.pixel_count
+        endpixels[1] = pixel
+        endpixels[3] = pixel
+        endpixels[5] = pixel
+        endpixels[7] = pixel
 
         blendstart_ms = frame_ms
         
@@ -42,7 +54,13 @@ def update(frame_ms, first_frame = False):
             # Blend finished. Return end pixels and start new blend.
             pixels = endpixels[:]
             startpixels = endpixels[:]
-            endpixels =   [doorsign.randomColor()] * doorsign.pixel_count
+            
+            pixel = doorsign.randomColor()
+            endpixels = [(0, 0, 0)] * doorsign.pixel_count
+            endpixels[1] = pixel
+            endpixels[3] = pixel
+            endpixels[5] = pixel
+            endpixels[7] = pixel
 
             blendstart_ms = frame_ms
         else:

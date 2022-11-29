@@ -30,6 +30,10 @@ rem curl --verbose --silent --output NUL --path-as-is %host%/api
 rem API: Set RGB on pixel #0.
 rem curl --verbose --request POST --path-as-is %host%/api?manual=1^&r0=255^&g0=255^&b0=0 
 
+rem API: Set all four backside pixels (#1, #3, #5 and #7):
+set b=40
+curl --verbose --request POST --path-as-is %host%/api?manual=1^&r1=%b%^&g1=%b%^&b1=%b%^&r3=%b%^&g3=%b%^&b3=%b%^&r5=%b%^&g5=%b%^&b5=%b%^&r7=%b%^&g7=%b%^&b7=%b%
+
 rem API: Trigger a reset. No response expected.
 rem curl --verbose --request POST --path-as-is %host%/reset 
 

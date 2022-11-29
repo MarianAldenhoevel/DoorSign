@@ -1,10 +1,10 @@
 # List of files to upload to build the firmware
 animation.py
 #animation_gammatest.py
-#animation_random_mixed.py
-#animation_random_uniform.py
+animation_random_mixed.py
+animation_random_uniform.py
 animation_template._py
-#animation_twinkle.py
+animation_twinkle.py
 config.json
 core0.py
 core1.py

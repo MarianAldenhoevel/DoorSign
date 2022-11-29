@@ -10,7 +10,7 @@ lock.
 So make sure you try..finally every one of them!
 '''
 
-firmware_version = '0.2'
+firmware_version = '0.3'
 pixel_count = 8 # Hardware-Config: Number of pixels on the board.
 framerate = 25 # Frames/s for animations.
 

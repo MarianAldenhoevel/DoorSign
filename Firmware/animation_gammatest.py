@@ -4,6 +4,7 @@ This animation blends each pixels between different randomly selected colors
 
 enabled = False
 blend_ms = 3000
+preferred_duration_ms = 60 * 60 * 1000
 
 import time
 import math

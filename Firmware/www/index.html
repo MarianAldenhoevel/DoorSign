@@ -102,16 +102,16 @@
         <div id="panel-container">
             <div id="buttons" class="panel">
                 <div class="panel-outer"><div class="panel-center"><div class="panel-inner">
-                    <button id="btnReset">Reset</button><button id="btnOff">Lights off</button><button id="btnAuto">Auto</button><button id="btnManual">Manual</button><button id="btnRead">Read</button>
+                    <button id="btnReset">Reset</button><button id="btnOff">Alles aus</button><button id="btnAuto">Auto</button><button id="btnManual">Manuell</button><button id="btnAPIData">API Data</button>
                     <div id="animations" style="display: none;">
                         <div class="separator"></div>
-                        <span>Play animation:</span><br/>
-                        <button id="" class="animation" style="display: none;">pick random</button></div>
+                        <span>Animation wählen:</span><br/>
+                        <button id="" class="animation" style="display: none;">🎲🎲</button></div>
                     <div id="status" style="display: none;">
                         <div class="separator"></div>
                         <div><label for="status_uptime">Uptime:&nbsp;</label><span id="status_uptime"></span></div>
-                        <div><label for="status_manual">Mode:&nbsp;</label><span id="status_manual"></span></div>
-                        <div><label for="status_active_animation">Active:&nbsp;</label><span id="status_active_animation"></span></div>
+                        <div><label for="status_manual">Modus:&nbsp;</label><span id="status_manual"></span></div>
+                        <div><label for="status_active_animation">Aktive Animation:&nbsp;</label><span id="status_active_animation"></span></div>
                         <div><label for="status_adc">ADC:&nbsp;</label><span id="status_adc"></span></div>                        
                     </div>                  
                 </div></div></div>
@@ -284,8 +284,8 @@
                 url: "/api",
                 success: function(apidata) {
                     $("#status_uptime").text(apidata.uptime);
-                    $("#status_manual").text(apidata.manual_control ? "Manual" : "Auto")
-                    $("#status_active_animation").text(apidata.active_animation ? apidata.active_animation : "No animation")
+                    $("#status_manual").text(apidata.manual_control ? "Manuell" : "Auto")
+                    $("#status_active_animation").text(apidata.active_animation ? apidata.active_animation : "Keine")
                     $("#status_adc").text(apidata.adc)
 
                     // Fade in the whole section.
@@ -337,7 +337,7 @@
             $("#btnReset").click( function() { url = "/reset";        $.post(url) }); 
             $("#btnAuto").click(  function() { url = "/api?manual=0"; $.post(url) }); 
             $("#btnManual").click(function() { url = "/api?manual=1"; $.post(url) }); 
-            $("#btnRead").click(function() { window.open("/api", "_blank") }); 
+            $("#btnAPIData").click(function() { window.open("/api", "_blank") }); 
             
             $("#btnOff").click(off); 
             

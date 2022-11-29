@@ -3,6 +3,7 @@ This animation turns on a single white LED for a short interval for a twinkling 
 '''
 
 enabled = True
+preferred_duration_ms = 6 * 1000
 
 import time
 import math

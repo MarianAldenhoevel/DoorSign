@@ -13,8 +13,7 @@ the pool and blend between the two.
 Care is taken that all enabled animations are used and never back-to-back.
 '''
 
-animation_switch_interval_ms = 30000 # Time in ms before animations are switched-
-animation_blend_ms = 5000 # Blend time between animations.
+preferred_animation_blend_ms = 60 * 1000 # Blend time between animations. It may turn out shorter if an animation requests to be runs for a short time. 
 
 # Set to empty string to request a random animation to start at the next
 # possible moment or set to the name of an animation to run next.
@@ -161,6 +160,8 @@ def task():
             
                 # Blend between the two animations in interval milliseconds
                 diff = time.ticks_diff(frame_ms, next_animation_start_ms)
+
+                # How long should the blend be?  
                 blend = diff/animation_blend_ms
                         
                 if (blend >= 1.0):
@@ -186,7 +187,7 @@ def task():
                 pixels = active_pixels
                 
                 # Do we have a next animation in our portfolio and do we want it now?
-                if (len(animations) >= 2) and (not doorsign.manual_control) and (time.ticks_diff(frame_ms, active_animation_start_ms) >= animation_switch_interval_ms):
+                if (len(animations) >= 2) and (not doorsign.manual_control) and (time.ticks_diff(frame_ms, active_animation_start_ms) >= active_animation.preferred_duration_ms):
                     # Pick a next animation to execute. Brutally sample until we do not 
                     # get the same as the active one.           
                     while True:
@@ -200,8 +201,12 @@ def task():
                         new_animations = old_animations
                         old_animations = []
                     next_animation_start_ms = frame_ms
-                                                                
+
                     logger.write('Next animation: ' + next_animation.__name__)
+
+                    # Calculate how long to blend between active and next animation. Typically this will be the preferred
+                    # value. But if the runtimes of the active or next animations are short trim it.
+                    animation_blend_ms = min(preferred_animation_blend_ms, active_animation.preferred_duration_ms // 2, next_animation.preferred_duration_ms // 2) 
             
         else:
             # No animation at all. All off.
