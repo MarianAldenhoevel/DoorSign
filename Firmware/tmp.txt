@@ -1,0 +1,335 @@
+ Volume in Laufwerk C: hat keine Bezeichnung.
+ Volumeseriennummer: 6C3D-5E50
+
+ Verzeichnis von C:\Users\Marian Aldenh”vel\Projekte\Heinrichsweg 9\DoorSign\Firmware
+
+28.11.2022  20:09    <DIR>          .
+28.11.2022  20:09    <DIR>          ..
+25.11.2022  11:15                64 .picowgo
+25.11.2022  11:15    <DIR>          .vscode
+27.11.2022  22:23               786 animation.py
+27.11.2022  22:23             1.615 animation_gammatest.py
+27.11.2022  22:23             1.492 animation_random_mixed.py
+27.11.2022  22:23             1.452 animation_random_uniform.py
+27.11.2022  22:23             1.848 animation_template._py
+27.11.2022  22:23             1.199 animation_twinkle.py
+27.11.2022  22:23               233 config.json
+28.11.2022  19:59            27.369 core0.py
+27.11.2022  22:23             9.876 core1.py
+27.11.2022  22:23             8.639 doorsign.py
+27.11.2022  22:23             6.957 lock.py
+27.11.2022  23:23    <DIR>          log
+28.11.2022  20:07             3.170 logger.py
+27.11.2022  22:23             2.528 main.py
+27.11.2022  22:23             1.404 project.pico-w-go
+28.11.2022  19:57             1.525 test.bat
+27.11.2022  22:23                 7 test.data
+28.11.2022  20:09                 0 tmp.txt
+27.11.2022  22:23             2.162 watchdog.py
+27.11.2022  19:29    <DIR>          www
+              19 Datei(en),         72.326 Bytes
+
+ Verzeichnis von C:\Users\Marian Aldenh”vel\Projekte\Heinrichsweg 9\DoorSign\Firmware\.vscode
+
+25.11.2022  11:15    <DIR>          .
+25.11.2022  11:15    <DIR>          ..
+25.11.2022  11:15               147 extensions.json
+25.11.2022  11:15    <JUNCTION>     Pico-W-Stub [c:\Users\Marian Aldenh”vel\AppData\Roaming\Code\User\Pico-W-Stub]
+25.11.2022  11:15               348 settings.json
+               2 Datei(en),            495 Bytes
+
+ Verzeichnis von C:\Users\Marian Aldenh”vel\Projekte\Heinrichsweg 9\DoorSign\Firmware\.vscode\Pico-W-Stub
+
+25.11.2022  11:15    <DIR>          .
+25.11.2022  11:15    <DIR>          ..
+25.11.2022  11:12               112 README.md
+25.11.2022  11:15    <DIR>          stdlib
+25.11.2022  11:15    <DIR>          stubs
+25.11.2022  11:12                27 version.json
+               2 Datei(en),            139 Bytes
+
+ Verzeichnis von C:\Users\Marian Aldenh”vel\Projekte\Heinrichsweg 9\DoorSign\Firmware\.vscode\Pico-W-Stub\stdlib
+
+25.11.2022  11:15    <DIR>          .
+25.11.2022  11:15    <DIR>          ..
+25.11.2022  11:12             2.006 abc.pyi
+25.11.2022  11:12                22 array.pyi
+25.11.2022  11:12            10.875 ast.pyi
+25.11.2022  11:12                24 binascii.pyi
+25.11.2022  11:12            82.831 builtins.pyi
+25.11.2022  11:12               590 cmath.pyi
+25.11.2022  11:15    <DIR>          collections
+25.11.2022  11:12                22 errno.pyi
+25.11.2022  11:12             1.865 gc.pyi
+25.11.2022  11:12                24 hashlib.pyi
+25.11.2022  11:12                21 heapq.pyi
+25.11.2022  11:15    <DIR>          importlib
+25.11.2022  11:12                18 io.pyi
+25.11.2022  11:12             9.076 math.pyi
+25.11.2022  11:12             3.940 mmap.pyi
+25.11.2022  11:12                19 os.pyi
+25.11.2022  11:12                23 random.pyi
+25.11.2022  11:12                19 re.pyi
+25.11.2022  11:12                22 select.pyi
+25.11.2022  11:12                21 socket.pyi
+25.11.2022  11:12                19 ssl.pyi
+25.11.2022  11:12                22 struct.pyi
+25.11.2022  11:12                19 sys.pyi
+25.11.2022  11:12                21 time.pyi
+25.11.2022  11:12            20.626 types.pyi
+25.11.2022  11:12            29.437 typing.pyi
+25.11.2022  11:12             1.952 uarray.pyi
+25.11.2022  11:12             1.707 ubinascii.pyi
+25.11.2022  11:12             1.814 ucollections.pyi
+25.11.2022  11:12               325 uerrno.pyi
+25.11.2022  11:12             2.287 uhashlib.pyi
+25.11.2022  11:12               742 uheapq.pyi
+25.11.2022  11:12             1.966 uio.pyi
+25.11.2022  11:12             8.169 uos.pyi
+25.11.2022  11:12             2.122 urandom.pyi
+25.11.2022  11:12             1.593 ure.pyi
+25.11.2022  11:12             2.223 uselect.pyi
+25.11.2022  11:12             8.978 usocket.pyi
+25.11.2022  11:12               758 ussl.pyi
+25.11.2022  11:12             1.363 ustruct.pyi
+25.11.2022  11:12             2.916 usys.pyi
+25.11.2022  11:12             6.651 utime.pyi
+25.11.2022  11:12             1.016 uzlib.pyi
+25.11.2022  11:12                21 zlib.pyi
+25.11.2022  11:12            14.850 _ast.pyi
+25.11.2022  11:12             2.297 _collections_abc.pyi
+25.11.2022  11:12             1.282 _thread.pyi
+25.11.2022  11:15    <DIR>          _typeshed
+              45 Datei(en),        226.594 Bytes
+
+ Verzeichnis von C:\Users\Marian Aldenh”vel\Projekte\Heinrichsweg 9\DoorSign\Firmware\.vscode\Pico-W-Stub\stdlib\collections
+
+25.11.2022  11:15    <DIR>          .
+25.11.2022  11:15    <DIR>          ..
+25.11.2022  11:12               253 abc.pyi
+25.11.2022  11:12            21.112 __init__.pyi
+               2 Datei(en),         21.365 Bytes
+
+ Verzeichnis von C:\Users\Marian Aldenh”vel\Projekte\Heinrichsweg 9\DoorSign\Firmware\.vscode\Pico-W-Stub\stdlib\importlib
+
+25.11.2022  11:15    <DIR>          .
+25.11.2022  11:15    <DIR>          ..
+25.11.2022  11:12             7.369 abc.pyi
+25.11.2022  11:12               974 __init__.pyi
+               2 Datei(en),          8.343 Bytes
+
+ Verzeichnis von C:\Users\Marian Aldenh”vel\Projekte\Heinrichsweg 9\DoorSign\Firmware\.vscode\Pico-W-Stub\stdlib\_typeshed
+
+25.11.2022  11:15    <DIR>          .
+25.11.2022  11:15    <DIR>          ..
+25.11.2022  11:12             9.497 __init__.pyi
+               1 Datei(en),          9.497 Bytes
+
+ Verzeichnis von C:\Users\Marian Aldenh”vel\Projekte\Heinrichsweg 9\DoorSign\Firmware\.vscode\Pico-W-Stub\stubs
+
+25.11.2022  11:15    <DIR>          .
+25.11.2022  11:15    <DIR>          ..
+25.11.2022  11:15    <DIR>          dht
+25.11.2022  11:15    <DIR>          ds18x20
+25.11.2022  11:15    <DIR>          framebuf
+25.11.2022  11:15    <DIR>          json
+25.11.2022  11:15    <DIR>          lwip
+25.11.2022  11:15    <DIR>          machine
+25.11.2022  11:15    <DIR>          micropython
+25.11.2022  11:15    <DIR>          neopixel
+25.11.2022  11:15    <DIR>          network
+25.11.2022  11:15    <DIR>          ntptime
+25.11.2022  11:15    <DIR>          onewire
+25.11.2022  11:15    <DIR>          rp2
+25.11.2022  11:15    <DIR>          typing_extensions
+25.11.2022  11:15    <DIR>          uasyncio
+25.11.2022  11:15    <DIR>          ucryptolib
+25.11.2022  11:15    <DIR>          uctypes
+25.11.2022  11:15    <DIR>          ujson
+25.11.2022  11:15    <DIR>          umachine
+25.11.2022  11:15    <DIR>          urequests
+25.11.2022  11:15    <DIR>          uwebsocket
+25.11.2022  11:15    <DIR>          websocket
+               0 Datei(en),              0 Bytes
+
+ Verzeichnis von C:\Users\Marian Aldenh”vel\Projekte\Heinrichsweg 9\DoorSign\Firmware\.vscode\Pico-W-Stub\stubs\dht
+
+25.11.2022  11:15    <DIR>          .
+25.11.2022  11:15    <DIR>          ..
+25.11.2022  11:12             1.242 dht.pyi
+               1 Datei(en),          1.242 Bytes
+
+ Verzeichnis von C:\Users\Marian Aldenh”vel\Projekte\Heinrichsweg 9\DoorSign\Firmware\.vscode\Pico-W-Stub\stubs\ds18x20
+
+25.11.2022  11:15    <DIR>          .
+25.11.2022  11:15    <DIR>          ..
+25.11.2022  11:12             1.647 ds18x20.pyi
+               1 Datei(en),          1.647 Bytes
+
+ Verzeichnis von C:\Users\Marian Aldenh”vel\Projekte\Heinrichsweg 9\DoorSign\Firmware\.vscode\Pico-W-Stub\stubs\framebuf
+
+25.11.2022  11:15    <DIR>          .
+25.11.2022  11:15    <DIR>          ..
+25.11.2022  11:12             5.317 framebuf.pyi
+               1 Datei(en),          5.317 Bytes
+
+ Verzeichnis von C:\Users\Marian Aldenh”vel\Projekte\Heinrichsweg 9\DoorSign\Firmware\.vscode\Pico-W-Stub\stubs\json
+
+25.11.2022  11:15    <DIR>          .
+25.11.2022  11:15    <DIR>          ..
+25.11.2022  11:12                20 json.pyi
+               1 Datei(en),             20 Bytes
+
+ Verzeichnis von C:\Users\Marian Aldenh”vel\Projekte\Heinrichsweg 9\DoorSign\Firmware\.vscode\Pico-W-Stub\stubs\lwip
+
+25.11.2022  11:15    <DIR>          .
+25.11.2022  11:15    <DIR>          ..
+25.11.2022  11:12             1.940 lwip.pyi
+               1 Datei(en),          1.940 Bytes
+
+ Verzeichnis von C:\Users\Marian Aldenh”vel\Projekte\Heinrichsweg 9\DoorSign\Firmware\.vscode\Pico-W-Stub\stubs\machine
+
+25.11.2022  11:15    <DIR>          .
+25.11.2022  11:15    <DIR>          ..
+25.11.2022  11:12                23 machine.pyi
+               1 Datei(en),             23 Bytes
+
+ Verzeichnis von C:\Users\Marian Aldenh”vel\Projekte\Heinrichsweg 9\DoorSign\Firmware\.vscode\Pico-W-Stub\stubs\micropython
+
+25.11.2022  11:15    <DIR>          .
+25.11.2022  11:15    <DIR>          ..
+25.11.2022  11:12             6.218 micropython.pyi
+               1 Datei(en),          6.218 Bytes
+
+ Verzeichnis von C:\Users\Marian Aldenh”vel\Projekte\Heinrichsweg 9\DoorSign\Firmware\.vscode\Pico-W-Stub\stubs\neopixel
+
+25.11.2022  11:15    <DIR>          .
+25.11.2022  11:15    <DIR>          ..
+25.11.2022  11:12             1.442 neopixel.pyi
+               1 Datei(en),          1.442 Bytes
+
+ Verzeichnis von C:\Users\Marian Aldenh”vel\Projekte\Heinrichsweg 9\DoorSign\Firmware\.vscode\Pico-W-Stub\stubs\network
+
+25.11.2022  11:15    <DIR>          .
+25.11.2022  11:15    <DIR>          ..
+25.11.2022  11:12             6.239 network.pyi
+               1 Datei(en),          6.239 Bytes
+
+ Verzeichnis von C:\Users\Marian Aldenh”vel\Projekte\Heinrichsweg 9\DoorSign\Firmware\.vscode\Pico-W-Stub\stubs\ntptime
+
+25.11.2022  11:15    <DIR>          .
+25.11.2022  11:15    <DIR>          ..
+25.11.2022  11:12               776 ntptime.pyi
+               1 Datei(en),            776 Bytes
+
+ Verzeichnis von C:\Users\Marian Aldenh”vel\Projekte\Heinrichsweg 9\DoorSign\Firmware\.vscode\Pico-W-Stub\stubs\onewire
+
+25.11.2022  11:15    <DIR>          .
+25.11.2022  11:15    <DIR>          ..
+25.11.2022  11:12             1.275 onewire.pyi
+               1 Datei(en),          1.275 Bytes
+
+ Verzeichnis von C:\Users\Marian Aldenh”vel\Projekte\Heinrichsweg 9\DoorSign\Firmware\.vscode\Pico-W-Stub\stubs\rp2
+
+25.11.2022  11:15    <DIR>          .
+25.11.2022  11:15    <DIR>          ..
+25.11.2022  11:12            15.078 rp2.pyi
+               1 Datei(en),         15.078 Bytes
+
+ Verzeichnis von C:\Users\Marian Aldenh”vel\Projekte\Heinrichsweg 9\DoorSign\Firmware\.vscode\Pico-W-Stub\stubs\typing_extensions
+
+25.11.2022  11:15    <DIR>          .
+25.11.2022  11:15    <DIR>          ..
+25.11.2022  11:12             8.499 typing_extensions.pyi
+               1 Datei(en),          8.499 Bytes
+
+ Verzeichnis von C:\Users\Marian Aldenh”vel\Projekte\Heinrichsweg 9\DoorSign\Firmware\.vscode\Pico-W-Stub\stubs\uasyncio
+
+25.11.2022  11:15    <DIR>          .
+25.11.2022  11:15    <DIR>          ..
+25.11.2022  11:12             4.142 core.pyi
+25.11.2022  11:12               645 event.pyi
+25.11.2022  11:12               187 funcs.pyi
+25.11.2022  11:12               190 lock.pyi
+25.11.2022  11:12               979 stream.pyi
+25.11.2022  11:12             1.358 task.pyi
+25.11.2022  11:12             5.123 __init__.pyi
+               7 Datei(en),         12.624 Bytes
+
+ Verzeichnis von C:\Users\Marian Aldenh”vel\Projekte\Heinrichsweg 9\DoorSign\Firmware\.vscode\Pico-W-Stub\stubs\ucryptolib
+
+25.11.2022  11:15    <DIR>          .
+25.11.2022  11:15    <DIR>          ..
+25.11.2022  11:12             1.609 ucryptolib.pyi
+               1 Datei(en),          1.609 Bytes
+
+ Verzeichnis von C:\Users\Marian Aldenh”vel\Projekte\Heinrichsweg 9\DoorSign\Firmware\.vscode\Pico-W-Stub\stubs\uctypes
+
+25.11.2022  11:15    <DIR>          .
+25.11.2022  11:15    <DIR>          ..
+25.11.2022  11:12             2.787 uctypes.pyi
+               1 Datei(en),          2.787 Bytes
+
+ Verzeichnis von C:\Users\Marian Aldenh”vel\Projekte\Heinrichsweg 9\DoorSign\Firmware\.vscode\Pico-W-Stub\stubs\ujson
+
+25.11.2022  11:15    <DIR>          .
+25.11.2022  11:15    <DIR>          ..
+25.11.2022  11:12               857 ujson.pyi
+               1 Datei(en),            857 Bytes
+
+ Verzeichnis von C:\Users\Marian Aldenh”vel\Projekte\Heinrichsweg 9\DoorSign\Firmware\.vscode\Pico-W-Stub\stubs\umachine
+
+25.11.2022  11:15    <DIR>          .
+25.11.2022  11:15    <DIR>          ..
+25.11.2022  11:12            60.986 umachine.pyi
+               1 Datei(en),         60.986 Bytes
+
+ Verzeichnis von C:\Users\Marian Aldenh”vel\Projekte\Heinrichsweg 9\DoorSign\Firmware\.vscode\Pico-W-Stub\stubs\urequests
+
+25.11.2022  11:15    <DIR>          .
+25.11.2022  11:15    <DIR>          ..
+25.11.2022  11:12             1.194 urequests.pyi
+               1 Datei(en),          1.194 Bytes
+
+ Verzeichnis von C:\Users\Marian Aldenh”vel\Projekte\Heinrichsweg 9\DoorSign\Firmware\.vscode\Pico-W-Stub\stubs\uwebsocket
+
+25.11.2022  11:15    <DIR>          .
+25.11.2022  11:15    <DIR>          ..
+25.11.2022  11:12               759 uwebsocket.pyi
+               1 Datei(en),            759 Bytes
+
+ Verzeichnis von C:\Users\Marian Aldenh”vel\Projekte\Heinrichsweg 9\DoorSign\Firmware\.vscode\Pico-W-Stub\stubs\websocket
+
+25.11.2022  11:15    <DIR>          .
+25.11.2022  11:15    <DIR>          ..
+25.11.2022  11:12                26 websocket.pyi
+               1 Datei(en),             26 Bytes
+
+ Verzeichnis von C:\Users\Marian Aldenh”vel\Projekte\Heinrichsweg 9\DoorSign\Firmware\log
+
+27.11.2022  23:23    <DIR>          .
+27.11.2022  23:23    <DIR>          ..
+               0 Datei(en),              0 Bytes
+
+ Verzeichnis von C:\Users\Marian Aldenh”vel\Projekte\Heinrichsweg 9\DoorSign\Firmware\www
+
+27.11.2022  19:29    <DIR>          .
+27.11.2022  19:29    <DIR>          ..
+25.11.2022  20:20            42.644 android-chrome-192x192.png
+25.11.2022  20:20           158.053 android-chrome-512x512.png
+25.11.2022  20:20            38.968 apple-touch-icon.png
+25.11.2022  20:33               246 browserconfig.xml
+25.11.2022  20:20             2.026 favicon-16x16.png
+25.11.2022  20:20             3.406 favicon-32x32.png
+25.11.2022  20:20            15.086 favicon.ico
+27.11.2022  20:38            15.286 index.html
+27.11.2022  11:20            89.664 jquery-3.6.1.min.js
+25.11.2022  20:20            23.261 mstile-150x150.png
+14.05.2021  17:47                24 run_python_server.bat
+25.11.2022  20:20             2.160 safari-pinned-tab.svg
+25.11.2022  20:20               426 site.webmanifest
+              13 Datei(en),        391.250 Bytes
+
+     Anzahl der angezeigten Dateien:
+             113 Datei(en),        860.567 Bytes
+              92 Verzeichnis(se),  5.042.438.144 Bytes frei

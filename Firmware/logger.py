@@ -5,7 +5,7 @@ It associated thread-IDs with readable names and synchronizes print()s
 '''
 
 logfile_size = 10*1024 # Rotate after this many bytes.
-logfile_count = 5 # Keep this many log files around. 0 to disable log to file.
+logfile_count = 0 # Keep this many log files around. 0 to disable log to file.
 logfolder = './log'
 
 import os
@@ -19,12 +19,13 @@ _thread_names = {}
 _current_index = None
 _current_filename = None
 
-try:
-    os.mkdir(logfolder)
-except:
-    pass
-
 if logfile_count:
+    # Creat the folder if it doesn't exist.
+    try:
+        os.mkdir(logfolder)
+    except:
+        pass
+
     # Find the first free logfile index 
     files = os.listdir()
     files = list(filter(lambda file: file.startswith('log.') and file.endswith('.txt'), os.listdir(logfolder)))
@@ -106,8 +107,3 @@ def write(msg):
 if __name__ == '__main__':
     
     write('__main__: No code')
-
-    '''
-    for _ in range(10):
-        write('X'*100)
-    '''

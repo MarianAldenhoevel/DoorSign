@@ -106,7 +106,14 @@
                     <div id="animations" style="display: none;">
                         <div class="separator"></div>
                         <span>Play animation:</span><br/>
-                        <button id="" class="animation" style="display: none;">pick random</button></div>                    
+                        <button id="" class="animation" style="display: none;">pick random</button></div>
+                    <div id="status" style="display: none;">
+                        <div class="separator"></div>
+                        <div><label for="status_uptime">Uptime:&nbsp;</label><span id="status_uptime"></span></div>
+                        <div><label for="status_manual">Mode:&nbsp;</label><span id="status_manual"></span></div>
+                        <div><label for="status_active_animation">Active:&nbsp;</label><span id="status_active_animation"></span></div>
+                        <div><label for="status_adc">ADC:&nbsp;</label><span id="status_adc"></span></div>                        
+                    </div>                  
                 </div></div></div>
             </div>
             <div class="panel led" id="led_template" style="display: none;">
@@ -146,6 +153,7 @@
     </body>
 
     <script>
+        const pixelnames = ['vorne oben links', 'hinten oben links', 'vorne oben rechts', 'hinten oben rechts', 'vorne unten rechts', 'hinten unten rechts', 'vorne unten links', 'hinten unten links'];
         var rgb = [[0,0,0]]; // [[0..255, 0..255, 0..255], [..], [..]]
         var hsv = [[0,0,0]]; // [[0.0 .. 1.0, 0.0 .. 1.0, 0.0 .. 1.0], [..], [..]]
 
@@ -246,14 +254,13 @@
 
             var ledcount = rgb.length;
             for (var ledindex = 0; ledindex < ledcount; ledindex++) { 
-                if (params) {
-                    params += "&";
-                }                        
-                params += "&r" + ledindex + "=0&g" + ledindex +"=0&b" + ledindex + "=0";
+                rgb[ledindex] = [0, 0, 0];
             }
 
-            url = "/api?" + params
-            $.post(url); // don't care about any results.
+            rgb_to_hsv();
+            update_ui()
+            clearTimeout(inflight)
+            post()
         }
         
         function post() {
@@ -271,6 +278,39 @@
             $.post(url); // don't care about any results.
         }
 
+        function update_status() {
+            $.ajax({
+                type: "GET",
+                url: "/api",
+                success: function(apidata) {
+                    $("#status_uptime").text(apidata.uptime);
+                    $("#status_manual").text(apidata.manual_control ? "Manual" : "Auto")
+                    $("#status_active_animation").text(apidata.active_animation ? apidata.active_animation : "No animation")
+                    $("#status_adc").text(apidata.adc)
+
+                    // Fade in the whole section.
+                    $("#status").fadeIn("fast");
+
+                    // Schedule to update again.
+                    setTimeout(update_status, 1000);
+                },
+                error: function(xhr, ajaxOptions, thrownError) {
+                    msg = "DOWN (" + xhr.status + " - " + thrownError + ")";
+                    $("#uptime").text(msg).fadeIn("slow");
+
+                    $("#status_manual").text("N/A")
+                    $("#status_active_animation").text("N/A")
+                    $("#status_adc").text("N/A")
+
+                    // Also fade in the whole section to show separator and header.
+                    $("#status").fadeIn("fast");
+
+                    // Schedule to update again.
+                    setTimeout(update_status, 1000 * 10);
+                }
+            });
+        }
+
         $(document).ready(function() {
             
             // Clone UI from template to the rest.
@@ -279,7 +319,7 @@
             for(i = 7 ; i >= 0 ; i--)
             {
                 leddiv = templatediv.clone().prop("id", "led" + i);
-                leddiv.find(".led-index").text("Pixel #" + i);
+                leddiv.find(".led-index").text("#" + i + " (" + pixelnames[i] + ")");
                 
                 templatediv.after(leddiv);
                 
@@ -340,14 +380,15 @@
             });
 
             // Fetch list of available animations and populate list.
-            $.get("/api", function(apidata) {
+            $.get("/api", function(apidata) {                            
+                // Buttons for animations
                 for (var i = 0; i < apidata.animations.length; i++) {
                     animname = apidata.animations[i];
                     btn = $("<button class=\"animation\" id=\"" + animname + "\">" + (animname.replace(/^(animation_)/,"")) + "</buttton>");
                     $("#animations").append(btn);
                     btn.fadeIn("slow");
 
-                    // Also fade in the whole section and the random-button.
+                    // Also fade in the whole section to show separator, header and the random-button.
                     $("#animations").fadeIn("fast");
                     $("button.animation").fadeIn("fast");
                 }
@@ -364,9 +405,12 @@
             // Calculate initial HSV values.
             rgb_to_hsv();
 
-            // Update the UI once.
+            // Update the UI once to sync the sliders.
             update_ui();
-            
+
+            // Get sensor readings and uptime.
+            update_status();
+
             // Synchronize physical LEDs to UI.
             // post(); // Don't. We only want to do that when the user actually changes something in the UI.
         });    

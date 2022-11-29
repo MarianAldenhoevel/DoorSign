@@ -1,0 +1,27 @@
+# List of files to upload to build the firmware
+animation.py
+#animation_gammatest.py
+#animation_random_mixed.py
+#animation_random_uniform.py
+animation_template._py
+#animation_twinkle.py
+config.json
+core0.py
+core1.py
+doorsign.py
+lock.py
+logger.py
+main.py
+watchdog.py
+www/android-chrome-192x192.png
+www/android-chrome-512x512.png
+www/apple-touch-icon.png
+www/browserconfig.xml
+www/favicon-16x16.png
+www/favicon-32x32.png
+www/favicon.ico
+www/index.html
+www/jquery-3.6.1.min.js
+www/mstile-150x150.png
+www/safari-pinned-tab.svg
+www/site.webmanifest

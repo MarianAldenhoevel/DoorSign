@@ -1,7 +1,7 @@
 '''
 This implements the network task.
 
-Sets up WiFi as STA (Client) or AP (Access point) as configured in config.json
+Sets up WiFi as STA (Client) or AP (Access point) as _configured in _config.json
 
 If set up as AP also runs a DNS server to implement a captive portal. The implementation
 of that is right here and trivial.
@@ -9,11 +9,11 @@ of that is right here and trivial.
 Then it starts a primitive web server also implemented here. The web server supports
 delivery of static resources and API endpoints all hardcoded.
 
-The network task controls the onboard LED. When setting up the LED is on, when setup
+The network task controls the _onboard LED. When setting up the LED is on, when setup
 is completed sucessfully it turns off. If an error is encountered connecting in STA mode
 a code is blinked. 
 
-In operation the LED turns on while network requests are being serviced.
+In operation the onboard LED turns on while network requests are being serviced.
 '''
 
 import rp2
@@ -31,32 +31,33 @@ import core1
 import logger
 import doorsign
 
-onboard = machine.Pin('LED', machine.Pin.OUT)
-myip = None
-config = None
-nextNTPSync = None
+_onboard = machine.Pin('LED', machine.Pin.OUT)
+_myip = None
+_config = None
+_nextNTPSync = None
+_boot_ms = time.ticks_ms()
 
 def setup():
-    global config
+    global _config
     
-    # Load configuration
+    # Load _configuration
     logger.write('Reading config.json')
     with open('config.json') as fp:
-        config = ujson.load(fp)
+        _config = ujson.load(fp)
     
 '''
 When the task fails to make a connection it blinks an error code on the
 onboard LED
 '''
 def fatalConnectionError(code, message):
-    onboard.off()
+    _onboard.off()
     logger.write('FATAL: ' + str(code) + ' - ' + message)
     
     time.sleep(1)
     for _ in range(code):
-        onboard.on()
+        _onboard.on()
         time.sleep(0.5)
-        onboard.off()
+        _onboard.off()
         time.sleep(0.5)
         
     raise RuntimeError(message)    
@@ -94,7 +95,7 @@ RCodeStrs = [
     
 def handleDNS(socket):
     try:
-        onboard.on()
+        _onboard.on()
 
         request, client = socket.recvfrom(1024) # Big enough for anyone?
 
@@ -165,7 +166,7 @@ def handleDNS(socket):
         response += b'\x00\x01\x00\x01' 				# Type and class (A record / IN class)
         response += b'\x00\x00\x00\x3C' 				# Time to live 60 seconds
         response += b'\x00\x04' 						# Response length (4 bytes = 1 ipv4 address)
-        response += bytes(map(int, myIP.split('.'))) 	# IP address parts
+        response += bytes(map(int, _myip.split('.'))) 	# IP address parts
         
         # And deliver it.
         socket.sendto(response, client)
@@ -174,20 +175,39 @@ def handleDNS(socket):
         logger.write('Error handling DNS request ' + str(e))
 
     finally:
-        onboard.off()
+        _onboard.off()
 
 '''
 Build a representation of the sensors and led settings
 '''
+
+def pluralize(n, unit):
+    if n == 0:
+        return ''
+    elif n == 1:
+        return '1 ' + unit + ' '
+    else:
+        return str(n) + ' ' + unit + 's '
+
 def apiData():
     result = {}
     
     doorsign.beginUpdate()
     try:
+        # Get filesystem information.
         v = os.statvfs('/')
         size_bytes = v[1]*v[2]
         free_bytes = v[0]*v[3]
         
+        # Get uptime. May wrap around and give values that are too short.
+        ticks = time.ticks_diff(_boot_ms, time.ticks_ms())
+        s, ms = divmod(ticks, 1000)
+        m, s = divmod(s, 60)
+        h, m = divmod(m, 60)
+        d, h = divmod(h, 24)
+        
+        result['uptime'] = (pluralize(d, 'day') + pluralize(h, 'hour') + pluralize(m, 'minute') + pluralize(s, 'second')).strip()
+        result['firmware_version'] = doorsign.firmware_version
         result['manual_control'] = doorsign.manual_control
         result['pixels'] = [{'R': p[0], 'G': p[1], 'B': p[2]} for p in doorsign.getPixels()]            
         result['adc'] = doorsign.readADC()
@@ -221,7 +241,7 @@ def extractHeader(data, header):
 This function implements the complete handling of a http request.
 ''' 
 def handleHttp(socket):
-    onboard.on()
+    _onboard.on()
     try:
         cl, addr = socket.accept()    
         logger.write('Client connected from '+ str(addr))
@@ -321,7 +341,7 @@ def handleHttp(socket):
             
                 elif method == 'DELETE':
                     # DELETE: Just attempt it and face the consequences.
-                    os.remove(resource)
+                    os.remove('/www/' + resource)
                     
                     statuscode = 200
                     statustext = 'OK'
@@ -396,7 +416,7 @@ def handleHttp(socket):
                         contentlength = int(extractHeader(request_header, b'Content-Length'))
                         
                         written = 0
-                        with open(resource, "wb") as dest:                            
+                        with open('/www/' + resource, "wb") as dest:                            
                             # We have only received the start of the data when we looked at the
                             # request. Save and read and save and read the rest...
                             while True:
@@ -481,16 +501,16 @@ def handleHttp(socket):
             logger.write('Mutilated request')
 
     finally:
-        onboard.off()
+        _onboard.off()
 
     # End of handleHttp()
 
 def syncNTP():
-    global nextNTPSync
+    global _nextNTPSync
     
     # We can only query the NTP server if we are a WIFI client (STA)
-    # and a ntp host is configured. Otherwise this is a NOP.
-    if not (('STA' in config) and ('ntpserver' in config['STA'])):
+    # and a ntp host is _configured. Otherwise this is a NOP.
+    if not (('STA' in _config) and ('ntpserver' in _config['STA'])):
         return
 
     logger.write('Syncing RTC with network time')
@@ -510,14 +530,14 @@ def syncNTP():
     Nah, we'll just send an emtpy request and pick the time out of the respone. Fair?
     '''
     
-    ntpserver = config['STA']['ntpserver']
+    ntpserver = _config['STA']['ntpserver']
     
     NTP_DELTA = 2208988800
     
     request = bytearray(48)
     request[0] = 0x1B
     
-    onboard.on()
+    _onboard.on()
             
     addr = socket.getaddrinfo(ntpserver, 123)[0][-1]
     ntp = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -535,7 +555,7 @@ def syncNTP():
         rtc.datetime((tm[0], tm[1], tm[2], tm[6] + 1, tm[3], tm[4], tm[5], 0))
 
         # Schedule the next sync in 24 hours.
-        nextNTPSync = time.ticks_add(time.ticks_ms(), 1000 * 60 * 60 * 24)
+        _nextNTPSync = time.ticks_add(time.ticks_ms(), 1000 * 60 * 60 * 24)
         
         logger.write('RTC synced with network time')
     
@@ -543,43 +563,43 @@ def syncNTP():
         logger.write('Error requesting network time from ' + ntpserver + ' (' + str(e) + ')')
         
         # Schedule the next sync using the RTC alarm.
-        nextNTPSync = time.ticks_add(time.ticks_ms(), 1000 * 60)
+        _nextNTPSync = time.ticks_add(time.ticks_ms(), 1000 * 60)
         
     finally:
-        onboard.off()
+        _onboard.off()
         ntp.close()
     
 def task():
 
-    global myIP
-    global nextNTPSync
+    global _myip
+    global _nextNTPSync
     
     logger.register_thread_name('NET ')
     watchdog.feed() # First feed to make us known to the WDT
     logger.write('Network task starting')
-    onboard.on()
+    _onboard.on()
 
     rp2.country('DE')
     
-    if ('STA' in config) and ('AP' in config):
-        fatalConnectionError(2, 'Configuration error: Both STA and AP defined in config')
-    elif 'STA' in config:
+    if ('STA' in _config) and ('AP' in _config):
+        fatalConnectionError(2, '_configuration error: Both STA and AP defined in _config')
+    elif 'STA' in _config:
         logger.write('Setting up as STA (client)')
         wlan = network.WLAN(network.STA_IF)
-    elif 'AP' in config:
+    elif 'AP' in _config:
         logger.write('Setting up as AP (Access Point)')
         wlan = network.WLAN(network.AP_IF)
-        #wlan.config(security = 3)
-        #wlan.config(authmode = 3)
-        wlan.config(essid = config['AP']['essid'])
-        if config['AP']['pw']:
-            wlan.config(password = config['AP']['pw'])
+        #wlan._config(security = 3)
+        #wlan._config(authmode = 3)
+        wlan._config(essid = _config['AP']['essid'])
+        if _config['AP']['pw']:
+            wlan._config(password = _config['AP']['pw'])
     else:
-        onboard.off()
-        logger.write('Neither STA nor AP defined in config. Network is done.')
+        _onboard.off()
+        logger.write('Neither STA nor AP defined in _config. Network is done.')
         return
         
-    # wlan.config(hostname = 'doorsign')
+    # wlan._config(hostname = 'doorsign')
     wlan.active(True)
 
     # logger.write(str(wlan.scan()))
@@ -603,10 +623,10 @@ def task():
             timeout -= 1
             time.sleep(1)
         
-    if 'STA' in config:
-        logger.write('Connecting to: ' + config['STA']['ssid'] + (' /w password' if config['STA']['pw'] else ''))
+    if 'STA' in _config:
+        logger.write('Connecting to: ' + _config['STA']['ssid'] + (' /w password' if _config['STA']['pw'] else ''))
 
-        wlan.connect(config['STA']['ssid'], config['STA']['pw'])
+        wlan.connect(_config['STA']['ssid'], _config['STA']['pw'])
 
         # Wait for connection with 10 second timeout
         timeout = 100
@@ -618,7 +638,7 @@ def task():
             time.sleep(1)
             watchdog.feed()
             
-        onboard.off()
+        _onboard.off()
             
         # Handle connection error
         # Error meanings
@@ -633,26 +653,26 @@ def task():
         if wlan.status() != 3:
             fatalConnectionError(4, 'Wi-Fi connection failed status = ' + str(wlan.status()))
         else:
-            onboard.off()
+            _onboard.off()
             logger.write('Connected')
             
             syncNTP()
             
     else:
-        # Immediately ready as AP. Indicate by turning off onboard-LED.
-        onboard.off()
+        # Immediately ready as AP. Indicate by turning off _onboard-LED.
+        _onboard.off()
 
     try:
         # Where am I?
-        myIP = wlan.ifconfig()[0]
-        logger.write('IP = ' + myIP)
+        _myip = wlan.ifconfig()[0]
+        logger.write('IP = ' + _myip)
         
         inputsockets = []
         
         http = None
         dns = None
         
-        if 'AP' in config:
+        if 'AP' in _config:
             # Set up DNS server socket for captive portal.
             addr = socket.getaddrinfo('0.0.0.0', 53, 0, socket.SOCK_DGRAM)[0][-1]
 
@@ -682,7 +702,7 @@ def task():
         while True:
             watchdog.feed()
 
-            if nextNTPSync and (time.ticks_diff(nextNTPSync, time.ticks_ms())) <= 0:
+            if _nextNTPSync and (time.ticks_diff(_nextNTPSync, time.ticks_ms())) <= 0:
                 syncNTP()
             
             readable, writeable, errored = select.select(inputsockets, [], [], 1)
